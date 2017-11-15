@@ -1,4 +1,4 @@
-# VideoPress
+# WCVideo-O-Matic
 
 A Node.js/Electron.io application to process WordCamp Videos, adding an opening and closing and transcoding to the appropriate size and setup, then uploading to WordPress.tv
 
