@@ -16,7 +16,7 @@ class Credits extends React.Component {
 				<h3><a href="http://www.kierahowe.com">http://www.kierahowe.com</a></h3>
 				<div>
 					Kiera is a software developer who specializes in WordPress development.  
-					You can see Kiera at WordCamps, but she usually has to leave her dragon at home<br/><br/>
+					You can see Kiera at WordCamps, but she usually has to leave her dragon at home.<br/><br/>
 					Feel free to reach out if you think you have something you want built.<br/><br/>
 					<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
 						<input type="hidden" name="cmd" value="_s-xclick"/>
