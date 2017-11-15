@@ -105,7 +105,7 @@ exports.sendFile = ( args ) => {
 
 			var stat = fs.statSync( args['outputfile'] );
 			var filesz = stat.size;
-			var stream = fs.createReadStream( '/Users/kiera/Google Drive/wapuu - CNTower.png' );// args['outputfile'] );
+			var stream = fs.createReadStream( args['outputfile'] );
 			var datacnt = 0;
 			stream.on('data', (chunk) => { 
 				datacnt += chunk.length;
@@ -113,7 +113,7 @@ exports.sendFile = ( args ) => {
 			})
 			form.append('wptv_file', stream);
 			
-			form.submit('http://www.malfunctioned.com/testupload.php', function(err, res) {
+			form.submit('https://wordpress.tv/submit-video/', function(err, res) {
 				//console.log( res );
 			}).on( 'finish', ( ) => { 
 	  			console.log( 'done' );
