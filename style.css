@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css?family=Saira+Semi+Condensed');
+
+body{ 
+	margin: 0px;
+	padding: 0px;
+	font-family: 'Saira Semi Condensed', sans-serif;
+}
+
+input,select { 
+	font-family: 'Saira Semi Condensed', sans-serif;
+}
+
+.error { 
+	color: red;
+	text-transform: uppercase;
+}
+
+.sidebar { 
+	width: 150px;
+	float: left;
+	background-color: #551111;
+	height: 100vh;
+	position: fixed;
+}
+
+.menu-item,.menu-item-credits{ 
+	color: #cccccc;
+	text-align: center;
+	cursor: pointer;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.menu-item .fa,.menu-item-credits .fa { 
+	font-size: 40px;
+	display: block;
+	text-align: center;
+}
+
+.menu-item-credits { 
+	position: fixed;
+	bottom: 10px;
+	left: 0;
+	width: 150px;
+}
+
+#mainarea { 
+	margin-left: 160px;
+}
+
+.settings_input table { 
+	width: calc( 100% - 200px );
+}
+.settings_input td:first-child { 
+	width: 200px;
+}
+.settings_input input { 
+	width: 100%;
+}
+
+.selected { 
+	background-color: #881111;
+}
+
+.credits_input { 
+	padding: 10%;
+}
+
+.credits_input img { 
+	float: right;
+	height: 200px;
+}
+.track_select { 
+	float: left;
+	display: inline-block;
+	padding: 10px;
+	border: 1px solid #eeeeee;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.session_item,.expand_settings,.video_edit { 
+	display: inline-block;
+	padding-left: 10px;
+}
+
+.video_edit { 
+	color: blue;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.expand_settings { 
+	color: blue;
+	cursor: pointer;
+}
+
+.session_list { 
+	clear: both;
+}
+
+.datefield { 
+	font-size: 40px;
+}
+.timefield { 
+	font-size: 25px;
+}
+
+.session_settings { 
+	border: 2px solid #eeeeee;
+	margin-left: 15px;
+	padding: 5px;
+	border-radius: 5px;
+	width: 90%;
+}
+
+.session_settings input[type="text"] { 
+	width: calc( 100% - 50px );
+}
+.session_settings span { 
+	display: block;
+}
+
+.session_settings span.checkbox_note { 
+	display: inline-block;
+}
+
+.done_detailinfo { 
+	display: inline-block;
+	color: green;
+	margin-right: 7px;	
+}
+
+.editor_input video { 
+	width: 900px;
+}
+
+.process_controls { 
+	float: right;	
+	font-size: 40px;
+}
+
+.process_controls .fa { 
+	padding: 10px;
+	cursor: pointer;
+}
+
+.process_controls .fa-play,.process_controls .fa-refresh { 
+	color: green;
+}
+.process_controls .fa-stop { 
+	color: blue;
+}
+.process_controls .fa-window-close-o { 
+	color: red;
+}
+
+.process_detail { 
+	margin-left: 20px;
+
+}
+.process_detail .percent { 
+	width: 150px;
+	display: inline-block;
+	margin-right: 10px;
+}
+.process_detail .percentblock { 
+	background-color: blue;
+	display: inline-block;
+}
+.process_detail .status { 
+	vertical-align: top;
+	display: inline-block;
+}
+
+.cats { 
+	height: 200px;
+	overflow-y: scroll;
+	border: 3px outset #eeeeee;
+}
+.cats li { 
+	list-style: none;
+}
+.cats input { 
+	width: 20px;
+}
+.cats>ul{ 
+	padding: 0px;
+	margin: 0px;
+}

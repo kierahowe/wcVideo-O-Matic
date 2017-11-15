@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css?family=Saira+Semi+Condensed');
+
+body{ 
+	margin: 0px;
+	padding: 0px;
+	font-family: 'Saira Semi Condensed', sans-serif;
+}
+
+.error { 
+	color: red;
+	text-transform: uppercase;
+}
+
+.sidebar { 
+	width: 150px;
+	float: left;
+	background-color: #551111;
+	height: 100vh;
+}
+
+.menu-item{ 
+	color: #cccccc;
+	margin: 20px;
+	text-align: center;
+	cursor: pointer;
+}
+
+.menu-item .fa { 
+	font-size: 40px;
+	display: block;
+	text-align: center;
+}
+
+.mainarea { 
+	margin-left: 180px;
+}
