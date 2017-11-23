@@ -30,7 +30,7 @@
     "babel-preset-stage-2": "^6.24.1"
   },
   "scripts": {
-    "build": "babel --presets es2015 assets/js/src/renderer.js assets/js/src/settings.js assets/js/src/presentation.js assets/js/src/editor.js assets/js/src/process.js assets/js/src/credits.js assets/js/src/fileselect.js --out-file assets/js/renderer.js",
+    "build": "babel --presets es2015 assets/js/src/renderer.js assets/js/src/settings.js assets/js/src/presentation.js assets/js/src/editor.js assets/js/src/process.js assets/js/src/credits.js assets/js/src/fileselect.js assets/js/src/upload.js --out-file assets/js/renderer.js",
     "start": "http-server"
   }
 }

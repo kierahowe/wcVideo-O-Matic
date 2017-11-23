@@ -68,6 +68,13 @@ $(document).ready( function () {
 			document.getElementById('mainarea')
 		);
 	});
+	$( '#upload' ).click( e => {
+		setSelected( e.target );
+		ReactDOM.render(
+			<Upload/>,
+			document.getElementById('mainarea')
+		);
+	});
 
 	$( '#credits' ).click( e => {
 		setSelected( e.target );
@@ -179,11 +186,14 @@ function getPresentationSettings( settings, callback ) {
 	} );
 }
 
+
+// The goal here is to eventually load the cats from the remote server at wordpress.tv, however, 
+// right now we are just going to load from the default_cats.json file
 function getCategories() { 
 	var fs = require('fs');
 	var cats = getSettings( 'cats' );
 
-	if( typeof cats === 'undefined' || typeof cats.length === 'undefined' || cats.length === 0 ) { 
+	if( 1 || typeof cats === 'undefined' || typeof cats.length === 'undefined' || cats.length === 0 ) { 
 		if( fs.existsSync( 'default_cats.json' ) ) { 
 			cats = fs.readFileSync("default_cats.json");
 			try { 

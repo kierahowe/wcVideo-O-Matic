@@ -1,4 +1,4 @@
-class Process extends React.Component {
+class Upload extends React.Component {
 	constructor( props ) { 
 		super(props);
 		this.doneitems = {};
@@ -40,12 +40,6 @@ class Process extends React.Component {
 			s[ this.state.currentid ].state = val.status;
 			this.setState( { progress: s });
 			if( val.complete ) { 
-				if ( val.success === true ) { 
-					var vid = this.state.viddetails;
-					vid[ this.state.currentid ]['doneprocess'] = true;
-					saveSettings( 'viddetail', vid )
-					this.setState( { viddetail: vid } );
-				}
 				this.doneitems[ this.state.currentid ] = 1;
 				this.setState( { currentid: null } ); 
 				if( this.endit === 1 ) { 
@@ -55,7 +49,7 @@ class Process extends React.Component {
 			}
 		}
 		if( this.endit !== 1 && this.state.currentid === null ) { 
-			this.beginVideoProcess();
+			this.beginVideoUpload();
 		}
 	}
 
@@ -94,12 +88,12 @@ class Process extends React.Component {
 		}
 	}
 
-	beginVideoProcess() { 
+	beginVideoUpload() { 
 		var id = '';
 		this.endit = 0;
 		for( var key in this.state.viddetail ) { 
 			if ( this.state.viddetail[key] && ! this.state.viddetail[key]['donefile'] &&
-				this.state.viddetail[key]['doneedit'] === 'on' && !this.doneitems[key] ) { 
+				this.state.viddetail[key]['doneprocess'] === 'on' && !this.doneitems[key] ) { 
 				id = key; 
 				break;
 			}
@@ -107,9 +101,9 @@ class Process extends React.Component {
 		if( id === '' ) { 
 			this.endProcess();
 			if( this.doneitems.length === 0 ) { 
-				alert( 'There are no videos to process');
+				alert( 'There are no videos to upload');
 			} else { 
-				alert( 'All videos have been processed');
+				alert( 'All videos have been uploaded');
 			}
 			return;
 		}
@@ -125,16 +119,13 @@ class Process extends React.Component {
 			return;
 		}
 
-		const p = require('electron').remote.require('./process')
+		const p = require('electron').remote.require('./upload')
 		p.startProcess( { 
 			'id': id, 
 			'outputfile': this.state.settings.outdir + '/' + details['outfile'] + '.mp4', 
-			'imagefile': this.state.settings.imagefile,
 			'speaker': details['speaker'], 
 			'title': details['viddetail'].title.rendered,
 			'description': details['viddetail'].content.rendered,
-			'mainvideo': this.state.viddetail[id]['videofile'],
-			'credits': this.state.settings.credits,
 			'slides': this.state.viddetail[id]['slides'],
 		});
 	}
@@ -142,7 +133,7 @@ class Process extends React.Component {
 	render() {
 		var listReady = Object.keys( this.state.viddetail).map( i => {
 			var item = this.state.viddetail[i];
-			if( ! this.state.details || this.state.viddetail[i]['doneedit'] !== 'on' )  { return; }
+			if( ! this.state.details || this.state.viddetail[i]['doneprocess'] !== 'on' )  { return; }
 
 			var detail = this.getDetailFromID( i );
 			return (
@@ -184,7 +175,7 @@ class Process extends React.Component {
 						onClick={( e ) => { this.killProcess( e ) } }
 						></i>
 				</div>
-				<h1>Process</h1>
+				<h1>Upload</h1>
 				<div className="swirlwait" style={ { display: (this.state === null || this.state.details === null) ? 'block' : 'none' } }>
 						Loading ...
 				</div>

@@ -3,6 +3,7 @@ class SettingsInput extends React.Component {
 		super(props);
 		
 		var set = getSettings( 'settings' );
+		if ( typeof set.cats === 'undefined' ) { set.cats = []; }
 		var ids = {};
 		for( var i = 0; i < set.cats.length; i ++ ){ 
 			ids[ set.cats[i] ] = true;
@@ -69,7 +70,7 @@ class SettingsInput extends React.Component {
 		if( typeof cats === 'undefined' ) { return ''; }
 		var out = cats.map( item => {
 			return (
-				<li id="category-{item[0]}">
+				<li id={'category-' + item[0]}>
 					<label className="selectit">
 						<input type="checkbox" id={'chk_' + item[0]} value={item[0]} checked={ typeof this.state.idChecked[item[0]] !== 'undefined' && this.state.idChecked[item[0]] }
 							onChange={( e ) => this.handleCatChange( e )} />
@@ -135,6 +136,13 @@ class SettingsInput extends React.Component {
 							<td>Output Directory</td>
 							<td>
 								<FileSelect id="outdir" type="dir" value={this.state.settings.outdir} 
+									onChange={(e) => this.handleLostFocus(e) } />
+							</td>
+						</tr>
+						<tr>
+							<td>Temp/Scratch Directory</td>
+							<td>
+								<FileSelect id="tmpdir" type="dir" value={this.state.settings.tmpdir} 
 									onChange={(e) => this.handleLostFocus(e) } />
 							</td>
 						</tr>

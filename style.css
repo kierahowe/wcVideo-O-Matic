@@ -188,3 +188,29 @@ input,select {
 	padding: 0px;
 	margin: 0px;
 }
+
+.editor_input video { 
+	width: 100%;
+}
+
+.vid_start_div,.vid_end_div { 
+	width: 49%;
+	display: inline-block;
+}
+
+.vjs-mark-end .vjs-icon-placeholder:before { 
+	content: '\f060';
+	font-family: FontAwesome;
+}
+.vjs-mark-start .vjs-icon-placeholder:before { 
+	content: '\f061';
+	font-family: FontAwesome;
+}
+
+.status { 
+	float: right;
+	width: 400px;
+}
+.status .statusdet { 
+	display: block;
+}

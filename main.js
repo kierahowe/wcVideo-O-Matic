@@ -5,6 +5,52 @@ var app = require('electron').app; // Module to control application life.
 var BrowserWindow = require('electron').BrowserWindow;  // Module to create native browser window.
 var vlcInfo = { };
 
+var http = require('http');
+
+http.createServer(function (req, res) {
+	var fs = require('fs');
+	const path = 'endfile.mp4'
+	const stat = fs.statSync(path)
+	const fileSize = stat.size
+	let range = req.headers.range
+
+	if (!range) {
+		range = 'bytes=0-';
+	}
+
+	const parts = range.replace(/bytes=/, "").split("-")
+	const start = parseInt(parts[0], 10)
+	let end = parts[1] 
+		? parseInt(parts[1], 10)
+		: fileSize-1
+
+	if ( end > 45000 ) { 
+		end = start + 45000;
+	}
+	if( end > fileSize ) { 
+		end = fileSize;
+	}
+	const chunksize = (end-start)
+	const file = fs.createReadStream(path, {start, end})
+	const head = {
+		'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+		'Accept-Ranges': 'bytes',
+		'Content-Length': chunksize,
+		'Content-Type': 'video/mp4',
+	}
+	res.writeHead(206, head);
+	file.pipe(res);
+	// } else {
+	// 	const head = {
+	// 		'Content-Length': fileSize,
+	// 		'Content-Type': 'video/mp4',
+	// 	}
+	// 	res.writeHead(200, head)
+	// 	fs.createReadStream(path).pipe(res)
+	// }
+	//res.end(); //end the response
+}).listen(3000); //the server object listens on port 8080
+
 /*  When ready */
 app.on('ready', function() {  
 	// var vlc = require('vlc')([

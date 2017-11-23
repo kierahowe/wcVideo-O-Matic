@@ -3,6 +3,9 @@ import $ from "jquery";
 class Presentations extends React.Component {
 	constructor( props ) { 
 		super(props);
+
+		this.tc = require('electron').remote.require('./transcode_tmp')
+		const stat = this.tc.getDetails();
 		
 		this.state = { 
 			details: null,
@@ -12,10 +15,61 @@ class Presentations extends React.Component {
 			curtrack: -1,
 			viddetail: getSettings( 'viddetail' ),
 			showsettings: null, 
+			transStat: {},
+			currentItem: stat.curid !== null ? stat.curid : null,
 		};
+
 		getPresentationSettings( this.state.settings, ( t, s, d ) => { 
 			this.setState( { tracks: t, speakers: s, details: d } );
 		} );
+
+		this.inter = setInterval( e => { this.checkProcess(); }, 200 );
+		this.currentOutname = '';
+	}
+
+	checkProcess() { 
+		if( this.state.currentItem !== null ) { 
+			const stat = this.tc.getDetails();
+
+			if( stat.complete === true ) { 
+				let vd = this.state.viddetail;
+				if( stat.success ) { 
+					vd[ this.state.currentItem ].tmp_file = this.currentOutname;
+				} else { 
+					vd[ this.state.currentItem ].processfail = true;
+					vd[ this.state.currentItem ].failmessage = stat.status;
+				}
+				this.setState( { viddetail: vd, currentItem: null } );
+				saveSettings( 'viddetail', vd );
+			}
+			this.setState( { transStat: stat } );
+
+			return; 
+		}		
+		
+		for( var vid in this.state.viddetail ) { 
+			if( typeof this.state.viddetail[ vid ].videofile !== 'undefined' && 
+				this.state.viddetail[ vid ].videofile !== '' && 
+				! this.state.viddetail[ vid ].processfail && 
+				! this.state.viddetail[ vid ].tmp_file ) { 
+				
+				this.currentOutname = '';
+				if( typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '' ) { 
+					this.currentOutname = '.';
+				} else { 
+					this.currentOutname = this.state.settings.tmpdir;
+				}
+				this.currentOutname += '/' + this.state.viddetail[ vid ].videofile.replace( /[^a-zA-Z0-9\_]/g, '_') + '.mp4';
+				this.setState( { currentItem: parseInt( vid ) } );
+
+				this.tc.transcode( this.state.viddetail[ vid ].videofile, this.currentOutname, vid );
+				break;
+			}
+		}
+	}
+
+	componentWillUnmount() {
+		clearInterval( this.inter );
 	}
 
 	changeTrack( e ) { 
@@ -95,18 +149,37 @@ class Presentations extends React.Component {
 		saveSettings( 'viddetail', this.state.viddetail );
 	}
 
-	hasAllInfo( id, type ) { 
-		if( type === 0 && this.state.viddetail[ id ] && ( 
-				this.state.viddetail[ id ]['doneedit'] 
-			) ) { 
-			return 'inline-block';
-		} else if( type === 1 && this.state.viddetail[ id ] && ( 
-				this.state.viddetail[ id ]['novideo'] || this.state.viddetail[ id ]['donefile'] 
-			) ) { 
-			return 'inline-block';
-		} else { 
-			return 'none';
+	iconout( id ) { 
+		if ( typeof this.state.viddetail[ id ] === 'undefined' ||  this.state.viddetail[ id ] === null ) { 
+			return '';
 		}
+
+		if( parseInt( this.state.currentItem ) === parseInt( id ) ) { 
+			return 'fa-spinner fa-spin'
+		} else if ( this.state.viddetail[ id ]['novideo'] || this.state.viddetail[ id ]['donefile'] ) {
+			return 'fa-check';
+		} else if ( this.state.viddetail[ id ]['doneedit'] ) { 
+			return 'fa-thumbs-o-up';
+		} else if ( this.state.viddetail[ id ]['tmp_file'] ) {
+			return 'fa-pencil';
+		} else if ( this.state.viddetail[ id ]['processfail'] ) {
+			return 'fa-times';
+		} else if ( this.state.viddetail[ id ]['videofile'] ) {
+			return 'fa-clock-o';
+		} else { 
+			return 'fa-question';
+		}
+	}
+
+	clearItem( id ) { 
+		let vd = this.state.viddetail;
+		let x = vd[id];
+		delete x.tmp_file;
+		delete x.processfail;
+		delete x.failmessage;
+		vd[id] = x;
+		this.setState( { viddetail: vd } );
+		saveSettings( 'viddetail', vd );
 	}
 
 	render() {
@@ -122,6 +195,26 @@ class Presentations extends React.Component {
 				);
 			});
 		}
+		var DisplayStatus = item => { return ( <div className="status"></div> ); };
+		if( this.state && this.state.currentItem !== null && typeof this.state.details !== 'undefined') {
+			var item = null;
+			for( var i in this.state.details ) { 
+				if( parseInt( this.state.details[i].id ) === parseInt( this.state.currentItem ) )  { 
+					item = this.state.details[i];
+					break;
+				}
+			}
+			if( item !== null ) { 
+				DisplayStatus = i => { return (
+						<div className="status">
+							<span className="statusdet">{ item['title']['rendered']}</span>
+							<span className="statusdet">% Complete: { this.state.transStat.percent }%</span>
+						</div>
+					); 
+				};
+			}
+		}
+
 		if( this.state.details ) {
 			var last = null;
 			var listItems = this.state.details.map( item => {
@@ -143,18 +236,11 @@ class Presentations extends React.Component {
 							style={ { display: ( parseInt( this.state.curtrack ) === -1 || 
 									  item.session_track.indexOf( parseInt( this.state.curtrack ) ) != -1 ) ? 'inline-block' : 'none' } }
 							> 
-							<div className="done_detailinfo"
-								style={ { display: this.hasAllInfo( item['id'], 0 ) } }
-							>
-								<i className="fa fa-thumbs-o-up" aria-hidden="true"></i>
-							</div>
-
-							<div className="done_detailinfo"
-								style={ { display: this.hasAllInfo( item['id'], 1 ) } }
-							>
-								<i className="fa fa-check" aria-hidden="true"></i>
+							<div className="done_detailinfo">
+								<i className={'fa ' + this.iconout(item['id'])} aria-hidden="true"></i>
 							</div>
 							
+						
 							{item['title']['rendered']}{speaker}
 	
 							<div className="expand_settings" onClick={( e ) => this.toggleDisplaySettings( item['id'] ) }>
@@ -162,7 +248,7 @@ class Presentations extends React.Component {
 							</div>
 							<div className="video_edit"
 								style={ { display: ( typeof this.state.viddetail[ item['id'] ] !== 'undefined' && 
-												 this.state.viddetail[ item['id'] ]['videofile'] ) ? 'inline-block' : 'none' } }
+												 this.state.viddetail[ item['id'] ]['tmp_file'] ) ? 'inline-block' : 'none' } }
 								onClick={( e ) => this.openVideo( item['id'] ) }
 								>
 								Edit Video
@@ -184,6 +270,11 @@ class Presentations extends React.Component {
 									value={ this.state.viddetail[ item['id'] ] ? this.state.viddetail[ item['id'] ]['slides'] : '' } 
 									onChange={( e ) => this.updateSessionSettings( e, item['id'] ) } 
 									onBlur={(e) => this.handleLostFocus(e) } />
+								<button onClick={(e) => this.clearItem( item['id'] )}>Clear Item</button>
+								<span class="error">
+									{ this.state.viddetail[ item['id'] ] && this.state.viddetail[ item['id'] ]['failmessage'] ? 
+										this.state.viddetail[ item['id'] ]['failmessage'] : '' }
+								</span>
 							</div>							
 						</div>
 					</div>
@@ -191,6 +282,7 @@ class Presentations extends React.Component {
 			});
 		}
 		return (<div className="presentation_input"><br/>
+					<DisplayStatus/>
 					<h1>Presentations</h1>
 					<div className="swirlwait" style={ { display: (this.state === null || this.state.details === null) ? 'block' : 'none' } }>
 						Loading ...

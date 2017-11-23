@@ -1,19 +1,70 @@
+import $ from "jquery";
 import videojs from 'video.js'
 
 class Editor extends React.Component {
 	constructor( props ) { 
 		super(props);
+		
+		var viddet = getSettings( 'viddetail' );
+		if( typeof viddet[ selectedVideo ] === 'undefined' ) { 
+			// failed this should really never happen
+			viddet[ selectedVideo ]	= {};
+		}
+		if( typeof viddet[ selectedVideo ]['video_start'] === 'undefined' ) { 
+			// failed this should really never happen
+			viddet[ selectedVideo ]['video_start']	= '0;00;00';
+		}
+		if( typeof viddet[ selectedVideo ]['video_end'] === 'undefined' ) { 
+			// failed this should really never happen
+			viddet[ selectedVideo ]['video_end'] = null;
+		}
+		this.player = null;
+		
 		this.state = { 
 			settings: getSettings( 'settings' ), 
-			viddetail: getSettings( 'viddetail' ),
+			viddetail: viddet,
 			selectedVideo: selectedVideo
 		};
 	}
 
 	componentDidMount() { 
-		this.player = videojs(this.videoNode, this.props, function onPlayerReady() {
-	      console.log('onPlayerReady', this)
-	    });
+		document.getElementById('video-js').innerHTML = 
+			'<video width="640" id="videoplayer" class="video-js vjs-default-skin" controls>' + 
+				'<source src="' + this.state.viddetail[this.state.selectedVideo]['tmp_file'] + '"></source>' + //' ' + this.state.viddetail[this.state.selectedVideo]['videofile'] +'"></source>' + 
+//				'<source src="file:///Users/kiera/Documents/Development/wcvideoomatic/out.mp4"></source>' + //' ' + this.state.viddetail[this.state.selectedVideo]['videofile'] +'"></source>' + 
+			'</video>';
+								//<video width="640" id="vjs" ref={ node => this.vjsNode = node } className="video-js"></video>
+		var self = this;
+
+		this.player = videojs( 'videoplayer', {
+//				src: this.state.viddetail[this.state.selectedVideo]['videofile']
+			}, function onPlayerReady() {
+
+			var htm = '<button class="vjs-mark-start vjs-control" type="button" aria-live="polite" title="Mark Start" aria-disabled="false"><span aria-hidden="true" class="vjs-icon-placeholder"></span><span class="vjs-control-text">Mark Start</span></button>';
+			htm += '<button class="vjs-mark-end vjs-control" type="button" aria-live="polite" title="Mark Start" aria-disabled="false"><span aria-hidden="true" class="vjs-icon-placeholder"></span><span class="vjs-control-text">Mark Start</span></button>';
+			$('.vjs-play-control').after( htm );
+
+			$('.vjs-mark-end').click( e => { 
+				self.setTimers( 'end', this.currentTime() );
+			});
+			$('.vjs-mark-start').click( e => { 
+				self.setTimers( 'start', this.currentTime() );
+			});
+		});
+
+		this.player.one('loadedmetadata', function() {
+			console.log(self.state.viddetail,selectedVideo, this.duration() )
+			if( self.state.viddetail[ selectedVideo ]['video_end'] === null ) { 
+				self.setTimers( 'end', this.duration() );
+			}
+		});
+	}
+
+	setTimers( item, val ) { 
+		 var x = this.state.viddetail;
+		 x[ this.state.selectedVideo ]['video_' + item] = val;
+		 this.setState( { viddetail: x });
+		 this.handleLostFocus();
 	}
 	
 	componentWillUnmount() {
@@ -47,6 +98,7 @@ class Editor extends React.Component {
 		saveSettings( 'viddetail', this.state.viddetail );
 	}
 
+	
 	render() {
 		const videoJsOptions = {
 				autoplay: true,
@@ -63,10 +115,21 @@ class Editor extends React.Component {
 					<div style={ { display: ( this.state.selectedVideo !== null ? 'none':'block' ) } }>
 						Please select a video to edit
 					</div>
-					<div style={ { display: ( this.state.selectedVideo !== null ? 'block':'none' ) } }>
-						<VideoPlayer id="canvas"/>
+					<div id="video-js" style={ { display: ( this.state.selectedVideo !== null ? 'block':'none' ) } }>
 					</div>
-					<input type="checkbox" id="doneedit" 
+					<div className="vid_start_div">
+						Video Start: <input type="text" id="video_start"
+									onChange={( e ) => this.updateSettings( e, this.state.selectedVideo ) } 
+									onBlur={(e) => this.handleLostFocus(e) } 
+									value={ ( this.state.viddetail[ this.state.selectedVideo ] ) ? this.state.viddetail[ this.state.selectedVideo ]['video_start']: ''}  />
+					</div>
+					<div className="vid_end_div">
+						Video End: <input type="text" id="video_end"
+									onChange={( e ) => this.updateSettings( e, this.state.selectedVideo ) } 
+									onBlur={(e) => this.handleLostFocus(e) } 
+									value={ ( this.state.viddetail[ this.state.selectedVideo ] ) ? this.state.viddetail[ this.state.selectedVideo ]['video_end']: ''}  />
+					</div>
+					<input type="checkbox" id="doneedit"
 								onChange={( e ) => this.updateSettings( e, this.state.selectedVideo ) } 
 								defaultChecked={ ( this.state.viddetail[ this.state.selectedVideo ] && this.state.viddetail[ this.state.selectedVideo ].doneedit === 'on' ) ? true:false }  />
 								<span className="checkbox_note">I am done editing this video</span>
@@ -80,30 +143,3 @@ class Editor extends React.Component {
 // 						 	<source src={this.state.viddetail[this.state.selectedVideo]['videofile']}/>
 // 							Your browser does not support the video tag.
 // 						</video>
-
-class VideoPlayer extends React.Component {
-	componentDidMount() {
-		// instantiate video.js
-		this.player = videojs(this.videoNode, this.props, function onPlayerReady() {
-			console.log('onPlayerReady', this)
-		});
-	}
-
-	// destroy player on unmount
-	componentWillUnmount() {
-		if (this.player) {
-			this.player.dispose()
-		}
-	}
-
-	// wrap the player in a div with a `data-vjs-player` attribute
-	// so videojs won't create additional wrapper in the DOM
-	// see https://github.com/videojs/video.js/pull/3856
-	render() {
-		return (
-			<div data-vjs-player>
-				<video ref={ node => this.videoNode = node } className="video-js"></video>
-			</div>
-		)
-	}
-}

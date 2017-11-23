@@ -62,6 +62,10 @@ function addCss() {
 		setSelected(e.target);
 		ReactDOM.render(React.createElement(Process, null), document.getElementById('mainarea'));
 	});
+	(0, _jquery2.default)('#upload').click(function (e) {
+		setSelected(e.target);
+		ReactDOM.render(React.createElement(Upload, null), document.getElementById('mainarea'));
+	});
 
 	(0, _jquery2.default)('#credits').click(function (e) {
 		setSelected(e.target);
@@ -170,11 +174,13 @@ function getPresentationSettings(settings, callback) {
 	});
 }
 
+// The goal here is to eventually load the cats from the remote server at wordpress.tv, however, 
+// right now we are just going to load from the default_cats.json file
 function getCategories() {
 	var fs = require('fs');
 	var cats = getSettings('cats');
 
-	if (typeof cats === 'undefined' || typeof cats.length === 'undefined' || cats.length === 0) {
+	if (1 || typeof cats === 'undefined' || typeof cats.length === 'undefined' || cats.length === 0) {
 		if (fs.existsSync('default_cats.json')) {
 			cats = fs.readFileSync("default_cats.json");
 			try {
@@ -208,6 +214,9 @@ var SettingsInput = function (_React$Component) {
 		var _this = _possibleConstructorReturn(this, (SettingsInput.__proto__ || Object.getPrototypeOf(SettingsInput)).call(this, props));
 
 		var set = getSettings('settings');
+		if (typeof set.cats === 'undefined') {
+			set.cats = [];
+		}
 		var ids = {};
 		for (var i = 0; i < set.cats.length; i++) {
 			ids[set.cats[i]] = true;
@@ -284,7 +293,7 @@ var SettingsInput = function (_React$Component) {
 			var out = cats.map(function (item) {
 				return React.createElement(
 					'li',
-					{ id: 'category-{item[0]}' },
+					{ id: 'category-' + item[0] },
 					React.createElement(
 						'label',
 						{ className: 'selectit' },
@@ -465,6 +474,23 @@ var SettingsInput = function (_React$Component) {
 							React.createElement(
 								'td',
 								null,
+								'Temp/Scratch Directory'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement(FileSelect, { id: 'tmpdir', type: 'dir', value: this.state.settings.tmpdir,
+									onChange: function onChange(e) {
+										return _this3.handleLostFocus(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
 								'Credits'
 							),
 							React.createElement(
@@ -511,6 +537,9 @@ var Presentations = function (_React$Component) {
 
 		var _this = _possibleConstructorReturn(this, (Presentations.__proto__ || Object.getPrototypeOf(Presentations)).call(this, props));
 
+		_this.tc = require('electron').remote.require('./transcode_tmp');
+		var stat = _this.tc.getDetails();
+
 		_this.state = {
 			details: null,
 			settings: getSettings('settings'),
@@ -518,15 +547,69 @@ var Presentations = function (_React$Component) {
 			tracks: null,
 			curtrack: -1,
 			viddetail: getSettings('viddetail'),
-			showsettings: null
+			showsettings: null,
+			transStat: {},
+			currentItem: stat.curid !== null ? stat.curid : null
 		};
+
+		console.log('xxx', stat, _this.state.currentItem);
+
 		getPresentationSettings(_this.state.settings, function (t, s, d) {
 			_this.setState({ tracks: t, speakers: s, details: d });
 		});
+
+		_this.inter = setInterval(function (e) {
+			_this.checkProcess();
+		}, 200);
+		_this.currentOutname = '';
 		return _this;
 	}
 
 	_createClass(Presentations, [{
+		key: 'checkProcess',
+		value: function checkProcess() {
+			if (this.state.currentItem !== null) {
+				var stat = this.tc.getDetails();
+
+				if (stat.complete === true) {
+					var vd = this.state.viddetail;
+					if (stat.success) {
+						vd[this.state.currentItem].tmp_file = this.currentOutname;
+					} else {
+						vd[this.state.currentItem].processfail = true;
+						vd[this.state.currentItem].failmessage = stat.status;
+					}
+					this.setState({ viddetail: vd, currentItem: null });
+					saveSettings('viddetail', vd);
+				}
+				this.setState({ transStat: stat });
+
+				return;
+			}
+
+			for (var vid in this.state.viddetail) {
+				if (typeof this.state.viddetail[vid].videofile !== 'undefined' && this.state.viddetail[vid].videofile !== '' && !this.state.viddetail[vid].processfail && !this.state.viddetail[vid].tmp_file) {
+
+					this.currentOutname = '';
+					if (typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '') {
+						this.currentOutname = '.';
+					} else {
+						this.currentOutname = this.state.settings.tmpdir;
+					}
+					this.currentOutname += '/' + this.state.viddetail[vid].videofile.replace(/[^a-zA-Z0-9\_]/g, '_') + '.mp4';
+					this.setState({ currentItem: parseInt(vid) });
+
+					this.tc.transcode(this.state.viddetail[vid].videofile, this.currentOutname, vid);
+					break;
+				}
+			}
+		}
+	}, {
+		key: 'componentWillUnmount',
+		value: function componentWillUnmount() {
+			clearInterval(this.inter);
+		}
+	}, {
 		key: 'changeTrack',
 		value: function changeTrack(e) {
 			var id = e.target.getAttribute('data-reactid').split('$')[1];
@@ -629,15 +712,39 @@ var Presentations = function (_React$Component) {
 			saveSettings('viddetail', this.state.viddetail);
 		}
 	}, {
-		key: 'hasAllInfo',
-		value: function hasAllInfo(id, type) {
-			if (type === 0 && this.state.viddetail[id] && this.state.viddetail[id]['doneedit']) {
-				return 'inline-block';
-			} else if (type === 1 && this.state.viddetail[id] && (this.state.viddetail[id]['novideo'] || this.state.viddetail[id]['donefile'])) {
-				return 'inline-block';
-			} else {
-				return 'none';
+		key: 'iconout',
+		value: function iconout(id) {
+			if (typeof this.state.viddetail[id] === 'undefined' || this.state.viddetail[id] === null) {
+				return '';
 			}
+
+			if (parseInt(this.state.currentItem) === parseInt(id)) {
+				return 'fa-spinner fa-spin';
+			} else if (this.state.viddetail[id]['novideo'] || this.state.viddetail[id]['donefile']) {
+				return 'fa-check';
+			} else if (this.state.viddetail[id]['doneedit']) {
+				return 'fa-thumbs-o-up';
+			} else if (this.state.viddetail[id]['tmp_file']) {
+				return 'fa-pencil';
+			} else if (this.state.viddetail[id]['processfail']) {
+				return 'fa-times';
+			} else if (this.state.viddetail[id]['videofile']) {
+				return 'fa-clock-o';
+			} else {
+				return 'fa-question';
+			}
+		}
+	}, {
+		key: 'clearItem',
+		value: function clearItem(id) {
+			var vd = this.state.viddetail;
+			var x = vd[id];
+			delete x.tmp_file;
+			delete x.processfail;
+			delete x.failmessage;
+			vd[id] = x;
+			this.setState({ viddetail: vd });
+			saveSettings('viddetail', vd);
 		}
 	}, {
 		key: 'render',
@@ -658,16 +765,49 @@ var Presentations = function (_React$Component) {
 					);
 				});
 			}
+			var DisplayStatus = function DisplayStatus(item) {
+				return React.createElement('div', { className: 'status' });
+			};
+			if (this.state && this.state.currentItem !== null && typeof this.state.details !== 'undefined') {
+				var item = null;
+				for (var i in this.state.details) {
+					if (parseInt(this.state.details[i].id) === parseInt(this.state.currentItem)) {
+						item = this.state.details[i];
+						break;
+					}
+				}
+				if (item !== null) {
+					DisplayStatus = function DisplayStatus(i) {
+						return React.createElement(
+							'div',
+							{ className: 'status' },
+							React.createElement(
+								'span',
+								{ className: 'statusdet' },
+								item['title']['rendered']
+							),
+							React.createElement(
+								'span',
+								{ className: 'statusdet' },
+								'% Complete: ',
+								_this2.state.transStat.percent,
+								'%'
+							)
+						);
+					};
+				}
+			}
+
 			if (this.state.details) {
 				var last = null;
 				var listItems = this.state.details.map(function (item) {
 					var speaker = '';
-					for (var i = 0; i < item.speakers.length; i++) {
-						if (_this2.state.speakers[item.speakers[i]]) {
+					for (var _i = 0; _i < item.speakers.length; _i++) {
+						if (_this2.state.speakers[item.speakers[_i]]) {
 							if (speaker !== '') {
 								speaker += ' and ';
 							}
-							speaker += _this2.state.speakers[item.speakers[i]]['title']['rendered'];
+							speaker += _this2.state.speakers[item.speakers[_i]]['title']['rendered'];
 						}
 					}
 					if (speaker !== '') {
@@ -687,17 +827,8 @@ var Presentations = function (_React$Component) {
 							},
 							React.createElement(
 								'div',
-								{ className: 'done_detailinfo',
-									style: { display: _this2.hasAllInfo(item['id'], 0) }
-								},
-								React.createElement('i', { className: 'fa fa-thumbs-o-up', 'aria-hidden': 'true' })
-							),
-							React.createElement(
-								'div',
-								{ className: 'done_detailinfo',
-									style: { display: _this2.hasAllInfo(item['id'], 1) }
-								},
-								React.createElement('i', { className: 'fa fa-check', 'aria-hidden': 'true' })
+								{ className: 'done_detailinfo' },
+								React.createElement('i', { className: 'fa ' + _this2.iconout(item['id']), 'aria-hidden': 'true' })
 							),
 							item['title']['rendered'],
 							speaker,
@@ -711,7 +842,7 @@ var Presentations = function (_React$Component) {
 							React.createElement(
 								'div',
 								{ className: 'video_edit',
-									style: { display: typeof _this2.state.viddetail[item['id']] !== 'undefined' && _this2.state.viddetail[item['id']]['videofile'] ? 'inline-block' : 'none' },
+									style: { display: typeof _this2.state.viddetail[item['id']] !== 'undefined' && _this2.state.viddetail[item['id']]['tmp_file'] ? 'inline-block' : 'none' },
 									onClick: function onClick(e) {
 										return _this2.openVideo(item['id']);
 									}
@@ -760,7 +891,14 @@ var Presentations = function (_React$Component) {
 									},
 									onBlur: function onBlur(e) {
 										return _this2.handleLostFocus(e);
-									} })
+									} }),
+								React.createElement(
+									'button',
+									{ onClick: function onClick(e) {
+											return _this2.clearItem(item['id']);
+										} },
+									'Clear Item'
+								)
 							)
 						)
 					);
@@ -770,6 +908,7 @@ var Presentations = function (_React$Component) {
 				'div',
 				{ className: 'presentation_input' },
 				React.createElement('br', null),
+				React.createElement(DisplayStatus, null),
 				React.createElement(
 					'h1',
 					null,
@@ -824,6 +963,10 @@ var Presentations = function (_React$Component) {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _jquery = require('jquery');
+
+var _jquery2 = _interopRequireDefault(_jquery);
+
 var _video = require('video.js');
 
 var _video2 = _interopRequireDefault(_video);
@@ -844,9 +987,24 @@ var Editor = function (_React$Component) {
 
 		var _this = _possibleConstructorReturn(this, (Editor.__proto__ || Object.getPrototypeOf(Editor)).call(this, props));
 
+		var viddet = getSettings('viddetail');
+		if (typeof viddet[selectedVideo] === 'undefined') {
+			// failed this should really never happen
+			viddet[selectedVideo] = {};
+		}
+		if (typeof viddet[selectedVideo]['video_start'] === 'undefined') {
+			// failed this should really never happen
+			viddet[selectedVideo]['video_start'] = '0;00;00';
+		}
+		if (typeof viddet[selectedVideo]['video_end'] === 'undefined') {
+			// failed this should really never happen
+			viddet[selectedVideo]['video_end'] = null;
+		}
+		_this.player = null;
+
 		_this.state = {
 			settings: getSettings('settings'),
-			viddetail: getSettings('viddetail'),
+			viddetail: viddet,
 			selectedVideo: selectedVideo
 		};
 		return _this;
@@ -855,9 +1013,43 @@ var Editor = function (_React$Component) {
 	_createClass(Editor, [{
 		key: 'componentDidMount',
 		value: function componentDidMount() {
-			this.player = (0, _video2.default)(this.videoNode, this.props, function onPlayerReady() {
-				console.log('onPlayerReady', this);
+			document.getElementById('video-js').innerHTML = '<video width="640" id="videoplayer" class="video-js vjs-default-skin" controls>' + '<source src="' + this.state.viddetail[this.state.selectedVideo]['tmp_file'] + '"></source>' + //' ' + this.state.viddetail[this.state.selectedVideo]['videofile'] +'"></source>' + 
+			//				'<source src="file:///Users/kiera/Documents/Development/wcvideoomatic/out.mp4"></source>' + //' ' + this.state.viddetail[this.state.selectedVideo]['videofile'] +'"></source>' + 
+			'</video>';
+			//<video width="640" id="vjs" ref={ node => this.vjsNode = node } className="video-js"></video>
+			var self = this;
+
+			this.player = (0, _video2.default)('videoplayer', {
+				//				src: this.state.viddetail[this.state.selectedVideo]['videofile']
+			}, function onPlayerReady() {
+				var _this2 = this;
+
+				var htm = '<button class="vjs-mark-start vjs-control" type="button" aria-live="polite" title="Mark Start" aria-disabled="false"><span aria-hidden="true" class="vjs-icon-placeholder"></span><span class="vjs-control-text">Mark Start</span></button>';
+				htm += '<button class="vjs-mark-end vjs-control" type="button" aria-live="polite" title="Mark Start" aria-disabled="false"><span aria-hidden="true" class="vjs-icon-placeholder"></span><span class="vjs-control-text">Mark Start</span></button>';
+				(0, _jquery2.default)('.vjs-play-control').after(htm);
+
+				(0, _jquery2.default)('.vjs-mark-end').click(function (e) {
+					self.setTimers('end', _this2.currentTime());
+				});
+				(0, _jquery2.default)('.vjs-mark-start').click(function (e) {
+					self.setTimers('start', _this2.currentTime());
+				});
 			});
+
+			this.player.one('loadedmetadata', function () {
+				console.log(self.state.viddetail, selectedVideo, this.duration());
+				if (self.state.viddetail[selectedVideo]['video_end'] === null) {
+					self.setTimers('end', this.duration());
+				}
+			});
+		}
+	}, {
+		key: 'setTimers',
+		value: function setTimers(item, val) {
+			var x = this.state.viddetail;
+			x[this.state.selectedVideo]['video_' + item] = val;
+			this.setState({ viddetail: x });
+			this.handleLostFocus();
 		}
 	}, {
 		key: 'componentWillUnmount',
@@ -896,7 +1088,7 @@ var Editor = function (_React$Component) {
 	}, {
 		key: 'render',
 		value: function render() {
-			var _this2 = this;
+			var _this3 = this;
 
 			var videoJsOptions = {
 				autoplay: true,
@@ -921,14 +1113,36 @@ var Editor = function (_React$Component) {
 					{ style: { display: this.state.selectedVideo !== null ? 'none' : 'block' } },
 					'Please select a video to edit'
 				),
+				React.createElement('div', { id: 'video-js', style: { display: this.state.selectedVideo !== null ? 'block' : 'none' } }),
 				React.createElement(
 					'div',
-					{ style: { display: this.state.selectedVideo !== null ? 'block' : 'none' } },
-					React.createElement(VideoPlayer, { id: 'canvas' })
+					{ className: 'vid_start_div' },
+					'Video Start: ',
+					React.createElement('input', { type: 'text', id: 'video_start',
+						onChange: function onChange(e) {
+							return _this3.updateSettings(e, _this3.state.selectedVideo);
+						},
+						onBlur: function onBlur(e) {
+							return _this3.handleLostFocus(e);
+						},
+						value: this.state.viddetail[this.state.selectedVideo] ? this.state.viddetail[this.state.selectedVideo]['video_start'] : '' })
+				),
+				React.createElement(
+					'div',
+					{ className: 'vid_end_div' },
+					'Video End: ',
+					React.createElement('input', { type: 'text', id: 'video_end',
+						onChange: function onChange(e) {
+							return _this3.updateSettings(e, _this3.state.selectedVideo);
+						},
+						onBlur: function onBlur(e) {
+							return _this3.handleLostFocus(e);
+						},
+						value: this.state.viddetail[this.state.selectedVideo] ? this.state.viddetail[this.state.selectedVideo]['video_end'] : '' })
 				),
 				React.createElement('input', { type: 'checkbox', id: 'doneedit',
 					onChange: function onChange(e) {
-						return _this2.updateSettings(e, _this2.state.selectedVideo);
+						return _this3.updateSettings(e, _this3.state.selectedVideo);
 					},
 					defaultChecked: this.state.viddetail[this.state.selectedVideo] && this.state.viddetail[this.state.selectedVideo].doneedit === 'on' ? true : false }),
 				React.createElement(
@@ -947,56 +1161,6 @@ var Editor = function (_React$Component) {
 // 						 	<source src={this.state.viddetail[this.state.selectedVideo]['videofile']}/>
 // 							Your browser does not support the video tag.
 // 						</video>
-
-var VideoPlayer = function (_React$Component2) {
-	_inherits(VideoPlayer, _React$Component2);
-
-	function VideoPlayer() {
-		_classCallCheck(this, VideoPlayer);
-
-		return _possibleConstructorReturn(this, (VideoPlayer.__proto__ || Object.getPrototypeOf(VideoPlayer)).apply(this, arguments));
-	}
-
-	_createClass(VideoPlayer, [{
-		key: 'componentDidMount',
-		value: function componentDidMount() {
-			// instantiate video.js
-			this.player = (0, _video2.default)(this.videoNode, this.props, function onPlayerReady() {
-				console.log('onPlayerReady', this);
-			});
-		}
-
-		// destroy player on unmount
-
-	}, {
-		key: 'componentWillUnmount',
-		value: function componentWillUnmount() {
-			if (this.player) {
-				this.player.dispose();
-			}
-		}
-
-		// wrap the player in a div with a `data-vjs-player` attribute
-		// so videojs won't create additional wrapper in the DOM
-		// see https://github.com/videojs/video.js/pull/3856
-
-	}, {
-		key: 'render',
-		value: function render() {
-			var _this4 = this;
-
-			return React.createElement(
-				'div',
-				{ 'data-vjs-player': true },
-				React.createElement('video', { ref: function ref(node) {
-						return _this4.videoNode = node;
-					}, className: 'video-js' })
-			);
-		}
-	}]);
-
-	return VideoPlayer;
-}(React.Component);
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1058,6 +1222,12 @@ var Process = function (_React$Component) {
 				s[this.state.currentid].state = val.status;
 				this.setState({ progress: s });
 				if (val.complete) {
+					if (val.success === true) {
+						var vid = this.state.viddetails;
+						vid[this.state.currentid]['doneprocess'] = true;
+						saveSettings('viddetail', vid);
+						this.setState({ viddetail: vid });
+					}
 					this.doneitems[this.state.currentid] = 1;
 					this.setState({ currentid: null });
 					if (this.endit === 1) {
@@ -1299,7 +1469,7 @@ var Credits = function (_React$Component) {
 				React.createElement(
 					"h3",
 					null,
-					"@xxowe"
+					"Twitter: @xxowe"
 				),
 				React.createElement(
 					"h3",
@@ -1313,7 +1483,7 @@ var Credits = function (_React$Component) {
 				React.createElement(
 					"div",
 					null,
-					"Kiera is a software developer who specializes in WordPress development.  You can see Kiera at WordCamps, but she usually has to leave her dragon at home",
+					"Kiera is a software developer who specializes in WordPress development. You can see Kiera at WordCamps, but she usually has to leave her dragon at home.",
 					React.createElement("br", null),
 					React.createElement("br", null),
 					"Feel free to reach out if you think you have something you want built.",
@@ -1408,4 +1578,260 @@ var FileSelect = function (_React$Component) {
 	}]);
 
 	return FileSelect;
+}(React.Component);
+'use strict';
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Upload = function (_React$Component) {
+	_inherits(Upload, _React$Component);
+
+	function Upload(props) {
+		_classCallCheck(this, Upload);
+
+		var _this = _possibleConstructorReturn(this, (Upload.__proto__ || Object.getPrototypeOf(Upload)).call(this, props));
+
+		_this.doneitems = {};
+		_this.endit = 0;
+
+		_this.state = {
+			settings: getSettings('settings'),
+			viddetail: getSettings('viddetail'),
+			progress: {},
+			currentid: null,
+			interval: null
+		};
+		getPresentationSettings(_this.state.settings, function (t, s, d) {
+			_this.setState({ tracks: t, speakers: s, details: d });
+		});
+		return _this;
+	}
+
+	_createClass(Upload, [{
+		key: 'componentDidMount',
+		value: function componentDidMount() {}
+	}, {
+		key: 'endProcess',
+		value: function endProcess() {
+			if (this.state.interval !== null) {
+				this.endit = 1;
+			}
+		}
+	}, {
+		key: 'killProcess',
+		value: function killProcess() {
+			this.endProcess();
+			// todo:  call out and kill the running process
+		}
+	}, {
+		key: 'checkProcess',
+		value: function checkProcess() {
+			var p = require('electron').remote.require('./process');
+			if (this.state.currentid !== null) {
+				var val = p.getDetails();
+				var s = this.state.progress;
+				s[this.state.currentid].percent = val.percent;
+				s[this.state.currentid].state = val.status;
+				this.setState({ progress: s });
+				if (val.complete) {
+					this.doneitems[this.state.currentid] = 1;
+					this.setState({ currentid: null });
+					if (this.endit === 1) {
+						clearInterval(this.state.interval);
+						this.setState({ interval: null });
+					}
+				}
+			}
+			if (this.endit !== 1 && this.state.currentid === null) {
+				this.beginVideoUpload();
+			}
+		}
+	}, {
+		key: 'getDetailFromID',
+		value: function getDetailFromID(id) {
+			var viddetail = '';
+			for (var i in this.state.details) {
+				if (parseInt(this.state.details[i].id) === parseInt(id)) {
+					viddetail = this.state.details[i];
+					break;
+				}
+			}
+
+			var speaker = '';
+			var outfile = '';
+			if (viddetail !== '') {
+				if (viddetail.speakers) {
+					for (var _i = 0; _i < viddetail.speakers.length; _i++) {
+						if (this.state.speakers[viddetail.speakers[_i]]) {
+							if (speaker !== '') {
+								speaker += ' and ';
+							}
+							speaker += this.state.speakers[viddetail.speakers[_i]]['title']['rendered'];
+						}
+					}
+				}
+
+				outfile = viddetail.title.rendered;
+				outfile = outfile.replace(/[^a-zA-Z0-9\_]/g, '_');
+			}
+			return { 'viddetail': viddetail, 'speaker': speaker, 'outfile': outfile };
+		}
+	}, {
+		key: 'startProcess',
+		value: function startProcess(e) {
+			var _this2 = this;
+
+			if (this.state.interval === null) {
+				var inter = setInterval(function (e) {
+					_this2.checkProcess();
+				}, 200);
+				this.setState({ interval: inter });
+				this.doneitems = {};
+			}
+		}
+	}, {
+		key: 'beginVideoUpload',
+		value: function beginVideoUpload() {
+			var id = '';
+			this.endit = 0;
+			for (var key in this.state.viddetail) {
+				if (this.state.viddetail[key] && !this.state.viddetail[key]['donefile'] && this.state.viddetail[key]['doneprocess'] === 'on' && !this.doneitems[key]) {
+					id = key;
+					break;
+				}
+			}
+			if (id === '') {
+				this.endProcess();
+				if (this.doneitems.length === 0) {
+					alert('There are no videos to upload');
+				} else {
+					alert('All videos have been uploaded');
+				}
+				return;
+			}
+
+			this.setState({ currentid: id });
+			var s = this.state.progress;
+			s[id] = { percent: 0, state: 'Starting to process' };
+			this.setState({ progress: s });
+
+			var details = this.getDetailFromID(id);
+			if (details['viddetail'] === '') {
+				alert('There are no details for the video');
+				return;
+			}
+
+			var p = require('electron').remote.require('./upload');
+			p.startProcess({
+				'id': id,
+				'outputfile': this.state.settings.outdir + '/' + details['outfile'] + '.mp4',
+				'speaker': details['speaker'],
+				'title': details['viddetail'].title.rendered,
+				'description': details['viddetail'].content.rendered,
+				'slides': this.state.viddetail[id]['slides']
+			});
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			var _this3 = this;
+
+			var listReady = Object.keys(this.state.viddetail).map(function (i) {
+				var item = _this3.state.viddetail[i];
+				if (!_this3.state.details || _this3.state.viddetail[i]['doneprocess'] !== 'on') {
+					return;
+				}
+
+				var detail = _this3.getDetailFromID(i);
+				return React.createElement(
+					'div',
+					{ className: 'pvideo_select', key: i
+					},
+					detail['viddetail'].title ? detail['viddetail'].title.rendered : '',
+					detail['speaker'] !== '' ? ' By ' + detail['speaker'] : '',
+					React.createElement(
+						'div',
+						{ className: 'process_detail', style: { display: typeof _this3.state.progress[i] !== 'undefined' ? 'block' : 'none' } },
+						React.createElement(
+							'div',
+							{ className: 'percent' },
+							React.createElement(
+								'div',
+								{ className: 'percentblock', style: { width: _this3.state.progress[i] ? _this3.state.progress[i].percent : 0 } },
+								React.createElement(
+									'span',
+									{ style: { display: (_this3.state.progress[i] ? _this3.state.progress[i].percent : 0) >= 50 ? 'inline-block' : 'none' } },
+									_this3.state.progress[i] ? _this3.state.progress[i].percent : 0,
+									'%'
+								),
+								'\xA0'
+							),
+							React.createElement(
+								'span',
+								{ style: { display: (_this3.state.progress[i] ? _this3.state.progress[i].percent : 0) < 50 ? 'inline-block' : 'none' } },
+								_this3.state.progress[i] ? _this3.state.progress[i].percent : 0,
+								'%'
+							)
+						),
+						React.createElement(
+							'div',
+							{ className: 'status' },
+							_this3.state.progress[i] ? _this3.state.progress[i].state : ''
+						)
+					)
+				);
+			});
+
+			return React.createElement(
+				'div',
+				{ className: 'process_input' },
+				React.createElement('br', null),
+				React.createElement(
+					'div',
+					{ className: 'process_controls' },
+					React.createElement('i', { className: this.state.interval === null ? 'fa fa-play' : 'fa fa-refresh fa-spin', 'aria-hidden': 'true',
+						title: 'Start Processing',
+						onClick: function onClick(e) {
+							return _this3.startProcess(e);
+						}
+					}),
+					React.createElement('i', { className: 'fa fa-stop', 'aria-hidden': 'true',
+						title: 'Stop Processing after this item',
+						onClick: function onClick(e) {
+							return _this3.endProcess(e);
+						}
+					}),
+					React.createElement('i', { className: 'fa fa-window-close-o', 'aria-hidden': 'true',
+						title: 'Stop Processing right now',
+						onClick: function onClick(e) {
+							_this3.killProcess(e);
+						}
+					})
+				),
+				React.createElement(
+					'h1',
+					null,
+					'Upload'
+				),
+				React.createElement(
+					'div',
+					{ className: 'swirlwait', style: { display: this.state === null || this.state.details === null ? 'block' : 'none' } },
+					'Loading ...'
+				),
+				React.createElement(
+					'div',
+					{ className: 'list', style: { display: this.state !== null && this.state.details !== null ? 'block' : 'none' } },
+					listReady
+				)
+			);
+		}
+	}]);
+
+	return Upload;
 }(React.Component);
