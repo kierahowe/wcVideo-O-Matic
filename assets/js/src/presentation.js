@@ -39,6 +39,7 @@ class Presentations extends React.Component {
 					vd[ this.state.currentItem ].processfail = true;
 					vd[ this.state.currentItem ].failmessage = stat.status;
 				}
+				console.log( 'done item ', vd[ this.state.currentItem ], stat );
 				this.setState( { viddetail: vd, currentItem: null } );
 				saveSettings( 'viddetail', vd );
 			}
@@ -51,7 +52,7 @@ class Presentations extends React.Component {
 			if( typeof this.state.viddetail[ vid ].videofile !== 'undefined' && 
 				this.state.viddetail[ vid ].videofile !== '' && 
 				! this.state.viddetail[ vid ].processfail && 
-				! this.state.viddetail[ vid ].tmp_file ) { 
+				typeof this.state.viddetail[ vid ].tmp_file !== 'undefined') { 
 				
 				this.currentOutname = '';
 				if( typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '' ) { 
