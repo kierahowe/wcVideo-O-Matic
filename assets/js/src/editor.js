@@ -129,11 +129,12 @@ class Editor extends React.Component {
 									onBlur={(e) => this.handleLostFocus(e) } 
 									value={ ( this.state.viddetail[ this.state.selectedVideo ] ) ? this.state.viddetail[ this.state.selectedVideo ]['video_end']: ''}  />
 					</div>
+					<div>
 					<input type="checkbox" id="doneedit"
 								onChange={( e ) => this.updateSettings( e, this.state.selectedVideo ) } 
 								defaultChecked={ ( this.state.viddetail[ this.state.selectedVideo ] && this.state.viddetail[ this.state.selectedVideo ].doneedit === 'on' ) ? true:false }  />
 								<span className="checkbox_note">I am done editing this video</span>
-							
+					</div>	
 				</div>
 				);
 	}

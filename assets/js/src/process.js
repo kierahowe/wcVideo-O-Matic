@@ -48,7 +48,7 @@ class Process extends React.Component {
 			this.setState( { progress: s });
 			if( val.complete ) { 
 				if ( val.success === true ) { 
-					var vid = this.state.viddetails;
+					var vid = this.state.viddetail;
 					vid[ this.state.currentid ]['doneprocess'] = true;
 					saveSettings( 'viddetail', vid )
 					this.setState( { viddetail: vid } );
@@ -143,6 +143,8 @@ class Process extends React.Component {
 			'credits': this.state.settings.credits,
 			'slides': this.state.viddetail[id]['slides'],
 			'tmpdir': this.state.settings.tmpdir,
+			'start': this.state.viddetail[id]['video_start'],
+			'end': this.state.viddetail[id]['video_end'],
 		});
 	}
 

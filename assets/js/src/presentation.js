@@ -34,7 +34,7 @@ class Presentations extends React.Component {
 			if( stat.complete === true ) { 
 				let vd = this.state.viddetail;
 				if( stat.success ) { 
-					vd[ this.state.currentItem ].tmp_file = this.currentOutname;
+					vd[ this.state.currentItem ].tmp_file = stat.fname;
 					vd[ this.state.currentItem ].processfail = false;
 					vd[ this.state.currentItem ].failmessage = null;
 				} else { 
@@ -54,7 +54,9 @@ class Presentations extends React.Component {
 			if( typeof this.state.viddetail[ vid ].videofile !== 'undefined' && 
 				this.state.viddetail[ vid ].videofile !== '' && 
 				! this.state.viddetail[ vid ].processfail && 
-				typeof this.state.viddetail[ vid ].tmp_file === 'undefined') { 
+				typeof this.state.viddetail[ vid ].tmp_file === 'undefined' && 
+				! this.state.viddetail[ vid ].novideo 
+				) { 
 				
 				this.currentOutname = '';
 				if( typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '' ) { 
@@ -180,6 +182,7 @@ class Presentations extends React.Component {
 		delete x.tmp_file;
 		delete x.processfail;
 		delete x.failmessage;
+		delete x.doneedit;
 		vd[id] = x;
 		this.setState( { viddetail: vd } );
 		saveSettings( 'viddetail', vd );

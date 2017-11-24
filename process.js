@@ -24,11 +24,14 @@ exports.startProcess = ( args ) => {
 		}
 		this.buildImageVideo( args['imagefile'], args['tmpdir'] + '/endfile.mp4', '', args['credits'], () => { 
 			percent ++;
-			this.mergeVideos( args['outputfile'], [ args['tmpdir'] + '/startfile.mp4', args['mainvideo'], args['tmpdir'] + '/endfile.mp4' ], () => { 
-				status = 'File processed: ';
-				percent = 100;
-				complete = true;
-				success = true;
+			this.mergeVideos( args['outputfile'], 
+				[ args['tmpdir'] + '/startfile.mp4', args['mainvideo'], args['tmpdir'] + '/endfile.mp4' ], 
+				{ 'bounds': { [args['mainvideo']]: { 'start': args['start'], 'end': args['end'] } } },
+				() => { 
+					status = 'File processed: ';
+					percent = 100;
+					complete = true;
+					success = true;
 			});
 		} );
 	} );
@@ -154,22 +157,46 @@ exports.transcode = ( inname, outname, ratio, callback ) => {
 
 }
 
-exports.mergeVideos = ( outname, vidlist ) => { 
+exports.mergeVideos = ( outname, vidlist, param, callback ) => { 
 	status = 'Start merging videos';
+	const fs = require("fs"); 
 
-	//var totalframes = viddetail[ vidlist[0] ].frames;
-	var totalframes = 65000;
 	var flg = 0;	
 	try{ 
 		var proc = ffmpeg( vidlist[0] );
+		
+		let fsz = fs.statSync( vidlist[0] ).size;
+		const firstSize = fsz;
+
+		var filter = '';
+		var cat = '';
+		if( typeof param['bounds'][vidlist[0]] !== 'undefined' ) { 
+			filter += '[0:0] trim=' + param['bounds'][vidlist[0]]['start'] + ':' + param['bounds'][vidlist[0]]['end'] +' [v0]'
+			filter += '[0:1] atrim=' + param['bounds'][vidlist[0]]['start'] + ':' + param['bounds'][vidlist[0]]['end'] +' [a0]'
+			cat += '[v0][a0]';
+		} else { 
+			cat += '[0:0][0:1]';
+		}
 		for( var i = 1; i < vidlist.length; i++ ) { 
 			proc.input( vidlist[i] );
+			fsz += fs.statSync( vidlist[i] ).size;
+			if( typeof param['bounds'][vidlist[i]] !== 'undefined' ) { 
+				if ( filter  !== '' ) { filter += ';'; }
+				filter += '[' + i + ':0] trim=' + param['bounds'][vidlist[i]]['start'] + ':' + param['bounds'][vidlist[i]]['end'] +',setpts=PTS-STARTPTS [v' + i + ']'
+				filter += ';[' + i + ':1] atrim=' + param['bounds'][vidlist[i]]['start'] + ':' + param['bounds'][vidlist[i]]['end'] +',asetpts=PTS-STARTPTS [a' + i + ']'
+				cat += '[v' + i + '][a' + i + ']';
+			} else { 
+				cat += '[' + i + ':0][' + i + ':1]';
+			}
 		}
+
 		proc.on('end', function() {
 			console.log('files have been merged succesfully');
 		  	status = 'Merging completed succesfully';
 		  	percent = 50;
 		  	complete = true;
+		  	success = true;
+		  	callback();
 		})
 		.on('error', function(err) {
 		  	console.log('An error occured merging ' + err.message);
@@ -178,16 +205,25 @@ exports.mergeVideos = ( outname, vidlist ) => {
 		  	complete = true;
 		})
 		.on('progress', function(info) {
-	    	console.log('progress ' + Math.round( 100 * info.frames / totalframes ) + '%');
-	    	percent = Math.round( 10 + ( 100 * info.frames / totalframes ) * .9 );
+	    	console.log('progress ' + (info.percent * firstSize / fsz) + '%');
+	    	percent = Math.round( info.percent * firstSize / fsz );
 	    })
+	    .on('start', function(commandLine) {
+			console.log('Spawned Ffmpeg with command: ' + commandLine);
+		})
 	  	.videoBitrate('2048k')
     	.videoCodec('mpeg4')
 		.audioBitrate('128k')
 		.audioChannels(2)
 		.format('avi')
-		.fps(25)
-		.mergeToFile(outname);
+		.fps(25);
+		console.log( 'filter', filter );
+		if( filter !== '' ) {
+			proc.addOption('-filter_complex', filter + ';' + cat + 'concat=n=' + vidlist.length + ':v=1:a=1');
+			proc.save( outname );
+		} else { 
+			proc.mergeToFile(outname);
+		}		
 	} catch( e ) { 
 		console.log( 'Failed to process video', e );
 		status = 'Video Compile failed: ' + e.message;

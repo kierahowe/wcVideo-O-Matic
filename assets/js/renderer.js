@@ -572,7 +572,7 @@ var Presentations = function (_React$Component) {
 				if (stat.complete === true) {
 					var vd = this.state.viddetail;
 					if (stat.success) {
-						vd[this.state.currentItem].tmp_file = this.currentOutname;
+						vd[this.state.currentItem].tmp_file = stat.fname;
 						vd[this.state.currentItem].processfail = false;
 						vd[this.state.currentItem].failmessage = null;
 					} else {
@@ -589,7 +589,7 @@ var Presentations = function (_React$Component) {
 			}
 
 			for (var vid in this.state.viddetail) {
-				if (typeof this.state.viddetail[vid].videofile !== 'undefined' && this.state.viddetail[vid].videofile !== '' && !this.state.viddetail[vid].processfail && typeof this.state.viddetail[vid].tmp_file === 'undefined') {
+				if (typeof this.state.viddetail[vid].videofile !== 'undefined' && this.state.viddetail[vid].videofile !== '' && !this.state.viddetail[vid].processfail && typeof this.state.viddetail[vid].tmp_file === 'undefined' && !this.state.viddetail[vid].novideo) {
 
 					this.currentOutname = '';
 					if (typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '') {
@@ -743,6 +743,7 @@ var Presentations = function (_React$Component) {
 			delete x.tmp_file;
 			delete x.processfail;
 			delete x.failmessage;
+			delete x.doneedit;
 			vd[id] = x;
 			this.setState({ viddetail: vd });
 			saveSettings('viddetail', vd);
@@ -1157,15 +1158,19 @@ var Editor = function (_React$Component) {
 						},
 						value: this.state.viddetail[this.state.selectedVideo] ? this.state.viddetail[this.state.selectedVideo]['video_end'] : '' })
 				),
-				React.createElement('input', { type: 'checkbox', id: 'doneedit',
-					onChange: function onChange(e) {
-						return _this3.updateSettings(e, _this3.state.selectedVideo);
-					},
-					defaultChecked: this.state.viddetail[this.state.selectedVideo] && this.state.viddetail[this.state.selectedVideo].doneedit === 'on' ? true : false }),
 				React.createElement(
-					'span',
-					{ className: 'checkbox_note' },
-					'I am done editing this video'
+					'div',
+					null,
+					React.createElement('input', { type: 'checkbox', id: 'doneedit',
+						onChange: function onChange(e) {
+							return _this3.updateSettings(e, _this3.state.selectedVideo);
+						},
+						defaultChecked: this.state.viddetail[this.state.selectedVideo] && this.state.viddetail[this.state.selectedVideo].doneedit === 'on' ? true : false }),
+					React.createElement(
+						'span',
+						{ className: 'checkbox_note' },
+						'I am done editing this video'
+					)
 				)
 			);
 		}
@@ -1351,7 +1356,9 @@ var Process = function (_React$Component) {
 				'mainvideo': this.state.viddetail[id]['tmp_file'],
 				'credits': this.state.settings.credits,
 				'slides': this.state.viddetail[id]['slides'],
-				'tmpdir': this.state.settings.tmpdir
+				'tmpdir': this.state.settings.tmpdir,
+				'start': this.state.viddetail[id]['video_start'],
+				'end': this.state.viddetail[id]['video_end']
 			});
 		}
 	}, {
