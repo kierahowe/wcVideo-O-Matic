@@ -214,3 +214,8 @@ input,select {
 .status .statusdet { 
 	display: block;
 }
+
+.error { 
+	color: red;
+	font-size: 14px;
+}

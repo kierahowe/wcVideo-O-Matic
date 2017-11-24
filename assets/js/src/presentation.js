@@ -35,6 +35,8 @@ class Presentations extends React.Component {
 				let vd = this.state.viddetail;
 				if( stat.success ) { 
 					vd[ this.state.currentItem ].tmp_file = this.currentOutname;
+					vd[ this.state.currentItem ].processfail = false;
+					vd[ this.state.currentItem ].failmessage = null;
 				} else { 
 					vd[ this.state.currentItem ].processfail = true;
 					vd[ this.state.currentItem ].failmessage = stat.status;
@@ -52,7 +54,7 @@ class Presentations extends React.Component {
 			if( typeof this.state.viddetail[ vid ].videofile !== 'undefined' && 
 				this.state.viddetail[ vid ].videofile !== '' && 
 				! this.state.viddetail[ vid ].processfail && 
-				typeof this.state.viddetail[ vid ].tmp_file !== 'undefined') { 
+				typeof this.state.viddetail[ vid ].tmp_file === 'undefined') { 
 				
 				this.currentOutname = '';
 				if( typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '' ) { 
@@ -261,18 +263,24 @@ class Presentations extends React.Component {
 								defaultChecked={ ( this.state.viddetail[ item['id'] ] && this.state.viddetail[ item['id'] ].novideo === 'on' ) ? true:false }  />
 								<span className="checkbox_note">This presentation has no video</span>
 							<div style={ { display: ( !this.state.viddetail[ item['id'] ] || !this.state.viddetail[ item['id'] ]['novideo'] ) ? 'block' : 'none' } }>
+								<input type="checkbox" id="keynote" 
+									onChange={( e ) => this.updateSessionSettings( e, item['id'] ) } 
+									defaultChecked={ ( this.state.viddetail[ item['id'] ] && this.state.viddetail[ item['id'] ].keynote === 'on' ) ? true:false }  />
+									<span className="checkbox_note">This is a keynote</span>
+								
 								<span>Video File</span>
 								<FileSelect id="videofile" onChange={( e ) => this.updateSessionSettings( e, item['id'] ) }
 								 	onBlur={(e) => this.handleLostFocus(e) }
-									value={ this.state.viddetail[ item['id'] ] ? this.state.viddetail[ item['id'] ]['videofile'] : '' } 
+									value={ this.state.viddetail[ item['id'] ] ? this.state.viddetail[ item['id'] ]['videofile'] : [] } 
+									multiselect
 								/>								
 								<span>Slide URL</span>
 								<input type="text" id="slides" 
 									value={ this.state.viddetail[ item['id'] ] ? this.state.viddetail[ item['id'] ]['slides'] : '' } 
 									onChange={( e ) => this.updateSessionSettings( e, item['id'] ) } 
 									onBlur={(e) => this.handleLostFocus(e) } />
-								<button onClick={(e) => this.clearItem( item['id'] )}>Clear Item</button>
-								<span class="error">
+								<button onClick={(e) => this.clearItem( item['id'] )}>Clear Processed Video</button>
+								<span className="error">
 									{ this.state.viddetail[ item['id'] ] && this.state.viddetail[ item['id'] ]['failmessage'] ? 
 										this.state.viddetail[ item['id'] ]['failmessage'] : '' }
 								</span>

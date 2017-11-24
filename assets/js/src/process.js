@@ -4,16 +4,24 @@ class Process extends React.Component {
 		this.doneitems = {};
 		this.endit = 0;
 
+		this.p = require('electron').remote.require('./process')
+		var stat = this.p.getDetails();
+
 		this.state = { 
 			settings: getSettings( 'settings' ),
 			viddetail: getSettings( 'viddetail' ),
 			progress: {}, 
-			currentid: null,
+			currentid: stat.curid !== null ? stat.curid : null,
 			interval: null,
 		};
 		getPresentationSettings( this.state.settings, ( t, s, d ) => { 
 			this.setState( { tracks: t, speakers: s, details: d } );
 		} );
+
+		if( stat.curid !== null ) { 
+			var inter = setInterval( e => { this.checkProcess(); }, 200 );
+			this.setState( { interval: inter } );
+		}
 	}
 
 	componentDidMount() { 
@@ -32,9 +40,8 @@ class Process extends React.Component {
 	}
 
 	checkProcess() { 
-		const p = require('electron').remote.require('./process')
 		if( this.state.currentid !== null ) {  
-			var val = p.getDetails();
+			var val = this.p.getDetails();
 			var s = this.state.progress;
 			s[ this.state.currentid ].percent = val.percent;
 			s[ this.state.currentid ].state = val.status;
@@ -89,7 +96,7 @@ class Process extends React.Component {
 	startProcess( e ) {
 		if( this.state.interval === null ) {
 			var inter = setInterval( e => { this.checkProcess(); }, 200 );
-			this.setState( { interval: inter } )
+			this.setState( { interval: inter } );
 			this.doneitems = {};
 		}
 	}
@@ -125,17 +132,17 @@ class Process extends React.Component {
 			return;
 		}
 
-		const p = require('electron').remote.require('./process')
-		p.startProcess( { 
+		this.p.startProcess( { 
 			'id': id, 
 			'outputfile': this.state.settings.outdir + '/' + details['outfile'] + '.mp4', 
 			'imagefile': this.state.settings.imagefile,
 			'speaker': details['speaker'], 
 			'title': details['viddetail'].title.rendered,
 			'description': details['viddetail'].content.rendered,
-			'mainvideo': this.state.viddetail[id]['videofile'],
+			'mainvideo': this.state.viddetail[id]['tmp_file'],
 			'credits': this.state.settings.credits,
 			'slides': this.state.viddetail[id]['slides'],
+			'tmpdir': this.state.settings.tmpdir,
 		});
 	}
 

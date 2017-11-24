@@ -4,45 +4,38 @@ var status = '';
 var complete = true;
 var viddetail = {};
 var success = false;
-
-//
-//{ frames: 150,
-  // currentFps: 0,
-  // currentKbps: 1772.8,
-  // targetSize: 1307,
-  // timemark: '00:00:06.04',
-  // percent: 100 }
-
+var curid = null;
+var arg = null;
 
 exports.startProcess = ( args ) => { 
 	//console.log( args );
 	
 	success = false;
 	percent = 0;
-	status = 'Starting video processing'
+	status = 'Starting video processing';
 	complete = false;
+	curid = args['id'];
+	arg = args;
 
-	this.buildImageVideo( args['imagefile'], 'startfile.mp4', '', args['speaker'] + '\n' + args['title'], () => { 
+	this.buildImageVideo( args['imagefile'], args['tmpdir'] + '/startfile.mp4', '', args['speaker'] + '\n' + args['title'], () => { 
 		percent ++;
-		if( args['credits'] === '' ) { 
+		if( typeof args['credits'] === 'undefined' || args['credits'] === '' ) { 
 			args['credits'] = args['speaker'] + '\n' + args['title'];
 		}
-		this.buildImageVideo( args['imagefile'], 'endfile.mp4', '', args['credits'], () => { 
+		this.buildImageVideo( args['imagefile'], args['tmpdir'] + '/endfile.mp4', '', args['credits'], () => { 
 			percent ++;
-			this.transcode( args['mainvideo'], 'transcode_midfile.mp4', '', () => { 
-				this.mergeVideos( args['outputfile'], [ 'startfile.mp4', 'transcode_midfile.mp4', 'endfile.mp4' ], () => { 
-					status = 'File processed: ';
-					percent = 100;
-					complete = true;
-					success = true;
-				});
+			this.mergeVideos( args['outputfile'], [ args['tmpdir'] + '/startfile.mp4', args['mainvideo'], args['tmpdir'] + '/endfile.mp4' ], () => { 
+				status = 'File processed: ';
+				percent = 100;
+				complete = true;
+				success = true;
 			});
 		} );
 	} );
 }
 
 exports.getDetails = () => { 
-	return { 'percent': percent, 'status': status, 'complete': complete, 'success': success };
+	return { 'percent': percent, 'status': status, 'complete': complete, 'success': success, 'curid': curid };
 }
 
 exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => { 
@@ -50,6 +43,7 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => {
 	if( audiofile === '' ) { 
 		audiofile = 'assets/media/empty-audio.mp3';
 	}
+
 	var proc = ffmpeg( img )
 		.loop(6)
 		.fps(25)
@@ -65,7 +59,7 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => {
 		.on('end', () => {
 			console.log('Video has been created succesfully');
 			status = 'Video complete';
-			this.transcode( 'tmp_vid.mp4', outfile, 1, callback );
+			this.transcode( arg['tmpdir'] + '/tmp_vid.mp4', outfile, 1, callback );
 		})
 		.on('error', function(err) {
 			console.log('An error occured on creating the video: ' + err.message);
@@ -81,32 +75,33 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => {
 	    	percent = Math.round( info.percent / 50 );
 	  	});
 
-		var textsplit = text.split('\n');
-		var th = '';
-		if( textsplit.length % 2 === 1 ) { 
-			th = '-( text_h * 1.2) /2';
-		}
-		if ( Math.floor(textsplit.length / 2) > 0 ) { 
-			th = th + '-( text_h * 1.2) *' + Math.floor(textsplit.length / 2);
-		}
-		for( var i = 0; i < textsplit.length; i++ ) {
-			proc.videoFilters({
-			  filter: 'drawtext',
-			  options: {
-			  	fontfile: 'assets/media/Baskerville.ttc',
-			    text: textsplit[i].replace('&amp', '&').replace(';', ''),
-			    fontsize: 95,
-			    fontcolor: 'black',
-			    x: '(main_w/2-text_w/2)',
-			    y: '( ( main_h/2 ' + th + ' ) + (' + ( i ) + ' * ( text_h * 1.2) ) )',
-			    shadowcolor: '888888',
-			    shadowx: 2,
-			    shadowy: 2
-			  }
-			})
-		}
-		// save to file
-		proc.save('tmp_vid.mp4');
+	var textsplit = text.split('\n');
+	var th = '';
+	if( textsplit.length % 2 === 1 ) { 
+		th = '-( text_h * 1.2) /2';
+	}
+	if ( Math.floor(textsplit.length / 2) > 0 ) { 
+		th = th + '-( text_h * 1.2) *' + Math.floor(textsplit.length / 2);
+	}
+	for( var i = 0; i < textsplit.length; i++ ) {
+		proc.videoFilters({
+		  filter: 'drawtext',
+		  options: {
+		  	fontfile: 'assets/media/Baskerville.ttc',
+		    text: textsplit[i].replace('&amp', '&').replace(';', ''),
+		    fontsize: 40,
+		    fontcolor: 'black',
+		    x: '(main_w/2-text_w/2)',
+		    y: '( ( main_h/2 ' + th + ' ) + (' + ( i ) + ' * ( text_h * 1.2) ) )',
+		    shadowcolor: '888888',
+		    shadowx: 2,
+		    shadowy: 2
+		  }
+		})
+	}
+
+	// save to file
+	proc.save( arg['tmpdir'] + '/tmp_vid.mp4');
 
 	return 0;
 }
@@ -162,13 +157,13 @@ exports.transcode = ( inname, outname, ratio, callback ) => {
 exports.mergeVideos = ( outname, vidlist ) => { 
 	status = 'Start merging videos';
 
-	var totalframes = viddetail[ vidlist[0] ].frames;
+	//var totalframes = viddetail[ vidlist[0] ].frames;
+	var totalframes = 65000;
 	var flg = 0;	
 	try{ 
 		var proc = ffmpeg( vidlist[0] );
 		for( var i = 1; i < vidlist.length; i++ ) { 
 			proc.input( vidlist[i] );
-			totalframes += viddetail[ vidlist[i] ].frames
 		}
 		proc.on('end', function() {
 			console.log('files have been merged succesfully');
@@ -184,7 +179,7 @@ exports.mergeVideos = ( outname, vidlist ) => {
 		})
 		.on('progress', function(info) {
 	    	console.log('progress ' + Math.round( 100 * info.frames / totalframes ) + '%');
-	    	percent = Math.round( 25 + ( 100 * info.frames / totalframes ) / 4 );
+	    	percent = Math.round( 10 + ( 100 * info.frames / totalframes ) * .9 );
 	    })
 	  	.videoBitrate('2048k')
     	.videoCodec('mpeg4')
