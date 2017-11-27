@@ -97,7 +97,7 @@ app.on('ready', function() {
 
 	})
 
-	openNewWindow ('index.html', { devTools: true });
+	openNewWindow ('index.html', { devTools: true  });   //devTools: true 
 } );
 
 
@@ -134,8 +134,8 @@ function openNewWindow (url, position, data) {
 	}
 
 
-	if (position.width == null) { position.width = pridisp.size.width / 2; }
-	if (position.height == null) { position.height = pridisp.size.height / 2; }
+	if (position.width == null) { position.width = pridisp.size.width *.8; }
+	if (position.height == null) { position.height = pridisp.size.height *.8; }
 
 	var args = { width: position.width, height: position.height};
 

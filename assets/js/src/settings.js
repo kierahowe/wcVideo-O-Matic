@@ -126,13 +126,6 @@ class SettingsInput extends React.Component {
 								onChange={( e ) => this.handleChange( e )}/></td>
 						</tr>
 						<tr>
-							<td>Background Image</td>
-							<td>
-								<FileSelect id="imagefile" value={this.state.settings.imagefile} 
-									onChange={(e) => this.handleLostFocus(e) } />
-							</td>
-						</tr>
-						<tr>
 							<td>Output Directory</td>
 							<td>
 								<FileSelect id="outdir" type="dir" value={this.state.settings.outdir} 
@@ -153,6 +146,45 @@ class SettingsInput extends React.Component {
 								onChange={( e ) => this.handleChange( e )}/>
 							</td>
 						</tr>
+						<tr>
+							<td>Background Image</td>
+							<td>
+								<FileSelect id="imagefile" value={this.state.settings.imagefile} 
+									onChange={(e) => this.handleLostFocus(e) } />
+							</td>
+						</tr>
+						<tr>
+							<td>Font</td>
+							<td>
+								<FileSelect id="fontfile" value={this.state.settings.fontfile} 
+									onChange={(e) => this.handleLostFocus(e) } />
+							</td>
+						</tr>
+						<tr>
+							<td>Font Size</td>
+							<td>
+								<input type="number" id="fontsize" value={this.state.settings.fontsize} 
+									onBlur={(e) => this.handleLostFocus(e) } 
+									onChange={( e ) => this.handleChange( e )}/>
+							</td>
+						</tr>
+						<tr>
+							<td>Font Color</td>
+							<td>
+								<input type="color" id="fontcolor" value={this.state.settings.fontcolor} 
+									onBlur={(e) => this.handleLostFocus(e) } 
+									onChange={( e ) => this.handleChange( e )}/>
+							</td>
+						</tr>
+						<tr>
+							<td>Text Y Position (0-720)</td>
+							<td>
+								<input type="number" id="text_y" value={this.state.settings.text_y} 
+									onBlur={(e) => this.handleLostFocus(e) } 
+									onChange={( e ) => this.handleChange( e )}/>
+							</td>
+						</tr>
+
 					</tbody>
 				</table>
 			</div>

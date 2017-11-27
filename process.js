@@ -6,6 +6,7 @@ var viddetail = {};
 var success = false;
 var curid = null;
 var arg = null;
+var outfile = null;
 
 exports.startProcess = ( args ) => { 
 	//console.log( args );
@@ -17,15 +18,27 @@ exports.startProcess = ( args ) => {
 	curid = args['id'];
 	arg = args;
 
-	this.buildImageVideo( args['imagefile'], args['tmpdir'] + '/startfile.mp4', '', args['speaker'] + '\n' + args['title'], () => { 
+	var param = { 
+		'fontfile': arg['fontfile'] ? arg['fontfile'][0] : 'assets/media/Baskerville.ttc', 
+		'fontsize': arg['fontsize'] ? arg['fontsize'] : 40, 
+		'text_y': arg['text_y'] ? arg['text_y'] : 40, 
+		'fontcolor': arg['fontcolor'] ? arg['fontcolor'].substring( 1 ) : '000000', 
+	};
+
+	outfile = args['outputfile'];
+	console.log( args );
+
+	this.buildImageVideo( args['imagefile'][0], args['tmpdir'][0] + '/startfile.mp4', '', 
+						args['speaker'] + '\n' + args['title'], param, () => { 
 		percent ++;
 		if( typeof args['credits'] === 'undefined' || args['credits'] === '' ) { 
 			args['credits'] = args['speaker'] + '\n' + args['title'];
 		}
-		this.buildImageVideo( args['imagefile'], args['tmpdir'] + '/endfile.mp4', '', args['credits'], () => { 
+		this.buildImageVideo( args['imagefile'][0], args['tmpdir'][0] + '/endfile.mp4', '', 
+						args['credits'], param, () => { 
 			percent ++;
 			this.mergeVideos( args['outputfile'], 
-				[ args['tmpdir'] + '/startfile.mp4', args['mainvideo'], args['tmpdir'] + '/endfile.mp4' ], 
+				[ args['tmpdir'][0] + '/startfile.mp4', args['mainvideo'], args['tmpdir'][0] + '/endfile.mp4' ], 
 				{ 'bounds': { [args['mainvideo']]: { 'start': args['start'], 'end': args['end'] } } },
 				() => { 
 					status = 'File processed: ';
@@ -38,10 +51,10 @@ exports.startProcess = ( args ) => {
 }
 
 exports.getDetails = () => { 
-	return { 'percent': percent, 'status': status, 'complete': complete, 'success': success, 'curid': curid };
+	return { 'percent': percent, 'status': status, 'complete': complete, 'success': success, 'curid': curid, 'outfile':outfile };
 }
 
-exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => { 
+exports.buildImageVideo = ( img, outfile, audiofile, text, params, callback ) => { 
 	status = 'Start building video from image';
 	if( audiofile === '' ) { 
 		audiofile = 'assets/media/empty-audio.mp3';
@@ -62,7 +75,7 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => {
 		.on('end', () => {
 			console.log('Video has been created succesfully');
 			status = 'Video complete';
-			this.transcode( arg['tmpdir'] + '/tmp_vid.mp4', outfile, 1, callback );
+			this.transcode( arg['tmpdir'][0] + '/tmp_vid.mp4', outfile, 1, callback );
 		})
 		.on('error', function(err) {
 			console.log('An error occured on creating the video: ' + err.message);
@@ -90,12 +103,12 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => {
 		proc.videoFilters({
 		  filter: 'drawtext',
 		  options: {
-		  	fontfile: 'assets/media/Baskerville.ttc',
+		  	fontfile: params['fontfile'],
 		    text: textsplit[i].replace('&amp', '&').replace(';', ''),
-		    fontsize: 40,
-		    fontcolor: 'black',
+		    fontsize: params['fontsize'],
+		    fontcolor: params['fontcolor'],
 		    x: '(main_w/2-text_w/2)',
-		    y: '( ( main_h/2 ' + th + ' ) + (' + ( i ) + ' * ( text_h * 1.2) ) )',
+		    y: '( ( ' + params['text_y'] + ' ' + th + ' ) + (' + ( i ) + ' * ( text_h * 1.2) ) )',
 		    shadowcolor: '888888',
 		    shadowx: 2,
 		    shadowy: 2
@@ -104,7 +117,7 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, callback ) => {
 	}
 
 	// save to file
-	proc.save( arg['tmpdir'] + '/tmp_vid.mp4');
+	proc.save( arg['tmpdir'][0] + '/tmp_vid.mp4');
 
 	return 0;
 }

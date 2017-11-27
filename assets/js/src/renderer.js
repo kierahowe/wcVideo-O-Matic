@@ -142,7 +142,6 @@ function getRemoteContent( settings, type, callback ) {
 	$.ajax( url, { 
 		})
 		.done( function( result ) { 
-			console.log( result );
 			cached[ url ] = result;
 			callback( result );
 		})
@@ -174,6 +173,9 @@ function getPresentationSettings( settings, callback ) {
 						}
 					}
 					d[i].speakers = p;
+
+					d[i].title.rendered = decodeHTML( d[i].title.rendered );
+					d[i].content.rendered = decodeHTML( d[i].content.rendered );
 				}
 				d.sort( function( a, b ) { 
 					if( a.meta._wcpt_session_time === b.meta._wcpt_session_time ) { return 0; }
@@ -188,7 +190,7 @@ function getPresentationSettings( settings, callback ) {
 
 
 // The goal here is to eventually load the cats from the remote server at wordpress.tv, however, 
-// right now we are just going to load from the default_cats.json file
+// right now we are just going to always load from the default_cats.json file
 function getCategories() { 
 	var fs = require('fs');
 	var cats = getSettings( 'cats' );
@@ -207,4 +209,44 @@ function getCategories() {
 	}
 
 	return cats;
+}
+
+function decodeHTML( instr ) { 
+	var entities = {
+		'amp': '&',
+		'apos': '\'',
+		'lt': '<',
+		'gt': '>',
+		'quot': '"',
+		'nbsp': '\xa0',
+		'#8212': '-',
+		'#8211': '-',
+		'#8217': '\'',
+		'#8230': '...',
+		'#8216': '‘', 
+		'#8218': '‚', 
+		'#8220': '“', 
+		'#8221': '”', 
+		'#8222': '„', 
+		'#8224': '†', 
+		'#8225': '‡', 
+		'#8226': '•', 
+		'#8240': '‰', 
+		'#8364': '€', 
+		'#8482': '™', 
+	};
+	var entityPattern = /&([^;]+);/ig;
+
+	return instr.replace(entityPattern, function(match, entity) {
+		entity = entity.toLowerCase();
+		if(entities.hasOwnProperty(entity)) {
+			return entities[entity];
+		}
+		if( entity[0] === '#' ) { 
+			return String.fromCharCode( parseInt(entity.substring( 1 ), 16));
+		}
+		// return original string if there is no matching entity (no replace)
+		return match;
+	});
+
 }

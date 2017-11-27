@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "main.js",
   "dependencies": {
+    "decode-html": "^2.0.0",
     "electron": "^1.7.9",
     "ffmpeg": "0.0.4",
     "fluent-ffmpeg": "^2.1.2",

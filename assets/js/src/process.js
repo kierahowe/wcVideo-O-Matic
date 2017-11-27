@@ -50,6 +50,7 @@ class Process extends React.Component {
 				if ( val.success === true ) { 
 					var vid = this.state.viddetail;
 					vid[ this.state.currentid ]['doneprocess'] = true;
+					vid[ this.state.currentid ]['donefile'] = val.outfile;
 					saveSettings( 'viddetail', vid )
 					this.setState( { viddetail: vid } );
 				}
@@ -134,24 +135,28 @@ class Process extends React.Component {
 
 		this.p.startProcess( { 
 			'id': id, 
-			'outputfile': this.state.settings.outdir + '/' + details['outfile'] + '.mp4', 
-			'imagefile': this.state.settings.imagefile,
+			'outputfile':  JSON.parse( this.state.settings.outdir )[0] + '/' + details['outfile'] + '.mp4', 
+			'imagefile': JSON.parse( this.state.settings.imagefile ),
 			'speaker': details['speaker'], 
 			'title': details['viddetail'].title.rendered,
 			'description': details['viddetail'].content.rendered,
 			'mainvideo': this.state.viddetail[id]['tmp_file'],
 			'credits': this.state.settings.credits,
 			'slides': this.state.viddetail[id]['slides'],
-			'tmpdir': this.state.settings.tmpdir,
+			'tmpdir': JSON.parse( this.state.settings.tmpdir ),
 			'start': this.state.viddetail[id]['video_start'],
 			'end': this.state.viddetail[id]['video_end'],
+			'fontfile': JSON.parse( this.state.settings['fontfile'] ), 
+			'fontsize': this.state.settings['fontsize'], 
+			'text_y': this.state.settings['text_y'], 
+			'fontcolor': this.state.settings['fontcolor'], 
 		});
 	}
 
 	render() {
 		var listReady = Object.keys( this.state.viddetail).map( i => {
 			var item = this.state.viddetail[i];
-			if( ! this.state.details || this.state.viddetail[i]['doneedit'] !== 'on' )  { return; }
+			if( ! this.state.details || this.state.viddetail[i]['doneedit'] !== 'on' || this.state.viddetail[i]['doneprocess'] )  { return; }
 
 			var detail = this.getDetailFromID( i );
 			return (

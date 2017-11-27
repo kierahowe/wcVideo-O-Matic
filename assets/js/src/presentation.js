@@ -161,8 +161,10 @@ class Presentations extends React.Component {
 
 		if( parseInt( this.state.currentItem ) === parseInt( id ) ) { 
 			return 'fa-spinner fa-spin'
-		} else if ( this.state.viddetail[ id ]['novideo'] || this.state.viddetail[ id ]['donefile'] ) {
+		} else if ( this.state.viddetail[ id ]['novideo'] || this.state.viddetail[ id ]['doneupload'] ) {
 			return 'fa-check';
+		} else if ( this.state.viddetail[ id ]['doneprocess'] ) { 
+			return 'fa-cloud-upload';
 		} else if ( this.state.viddetail[ id ]['doneedit'] ) { 
 			return 'fa-thumbs-o-up';
 		} else if ( this.state.viddetail[ id ]['tmp_file'] ) {
@@ -183,6 +185,29 @@ class Presentations extends React.Component {
 		delete x.processfail;
 		delete x.failmessage;
 		delete x.doneedit;
+		vd[id] = x;
+		this.setState( { viddetail: vd } );
+		saveSettings( 'viddetail', vd );
+	}
+
+	clearItemProcessed( id ) { 
+		console.log( 'clear', id );
+		let vd = this.state.viddetail;
+		let x = vd[id];
+		delete x.doneupload;
+		delete x.doneprocess;
+		vd[id] = x;
+		this.setState( { viddetail: vd } );
+		saveSettings( 'viddetail', vd );
+	}
+
+	clearItemUpload( id ) { 
+		console.log( 'clear', id );
+		let vd = this.state.viddetail;
+		let x = vd[id];
+		delete x.doneupload;
+		delete x.failedupload;
+		delete x.returnout;
 		vd[id] = x;
 		this.setState( { viddetail: vd } );
 		saveSettings( 'viddetail', vd );
@@ -232,7 +257,7 @@ class Presentations extends React.Component {
 					}
 				}
 				if( speaker !== '' ) { speaker = ' by ' + speaker; }
-					
+				
 				var data = this.getDateInfo( last, item );
 				last = item;
 				return (
@@ -247,7 +272,7 @@ class Presentations extends React.Component {
 							</div>
 							
 						
-							{item['title']['rendered']}{speaker}
+							{item['title']['rendered']}{speaker} &#8217;
 	
 							<div className="expand_settings" onClick={( e ) => this.toggleDisplaySettings( item['id'] ) }>
 								<i className="fa fa-expand" aria-hidden="true"></i>
@@ -283,6 +308,8 @@ class Presentations extends React.Component {
 									onChange={( e ) => this.updateSessionSettings( e, item['id'] ) } 
 									onBlur={(e) => this.handleLostFocus(e) } />
 								<button onClick={(e) => this.clearItem( item['id'] )}>Clear Processed Video</button>
+								<button onClick={(e) => this.clearItemProcessed( item['id'] )}>Clear Processed</button>
+								<button onClick={(e) => this.clearItemUpload( item['id'] )}>Clear Upload</button>
 								<span className="error">
 									{ this.state.viddetail[ item['id'] ] && this.state.viddetail[ item['id'] ]['failmessage'] ? 
 										this.state.viddetail[ item['id'] ]['failmessage'] : '' }

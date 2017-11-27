@@ -32,7 +32,7 @@ class Upload extends React.Component {
 	}
 
 	checkProcess() { 
-		const p = require('electron').remote.require('./process')
+		const p = require('electron').remote.require('./upload')
 		if( this.state.currentid !== null ) {  
 			var val = p.getDetails();
 			var s = this.state.progress;
@@ -40,16 +40,29 @@ class Upload extends React.Component {
 			s[ this.state.currentid ].state = val.status;
 			this.setState( { progress: s });
 			if( val.complete ) { 
+				var vid = this.state.viddetail;
+				if( val.success === true ) { 
+					vid[ this.state.currentid ]['doneupload'] = true;
+				} else { 
+					vid[ this.state.currentid ]['failedupload'] = true;
+				}
+				vid[ this.state.currentid ]['returnout'] = val.detail;
+
+				saveSettings( 'viddetail', vid );
+				this.setState( { viddetail: vid } );
+
 				this.doneitems[ this.state.currentid ] = 1;
 				this.setState( { currentid: null } ); 
-				if( this.endit === 1 ) { 
-					clearInterval( this.state.interval );
-					this.setState( { interval: null } );
-				}
 			}
 		}
+
 		if( this.endit !== 1 && this.state.currentid === null ) { 
 			this.beginVideoUpload();
+		}
+
+		if( this.endit === 1 ) { 
+			clearInterval( this.state.interval );
+			this.setState( { interval: null } );
 		}
 	}
 
@@ -92,15 +105,18 @@ class Upload extends React.Component {
 		var id = '';
 		this.endit = 0;
 		for( var key in this.state.viddetail ) { 
-			if ( this.state.viddetail[key] && ! this.state.viddetail[key]['donefile'] &&
-				this.state.viddetail[key]['doneprocess'] === 'on' && !this.doneitems[key] ) { 
+			if ( this.state.viddetail[key] && this.state.viddetail[key]['donefile'] &&
+				this.state.viddetail[key]['doneprocess'] && !this.doneitems[key] && 
+				! this.state.viddetail[key]['doneupload'] 
+				) { 
 				id = key; 
 				break;
 			}
 		}
+
 		if( id === '' ) { 
 			this.endProcess();
-			if( this.doneitems.length === 0 ) { 
+			if( Object.keys( this.doneitems ).length === 0 ) { 
 				alert( 'There are no videos to upload');
 			} else { 
 				alert( 'All videos have been uploaded');
@@ -122,7 +138,7 @@ class Upload extends React.Component {
 		const p = require('electron').remote.require('./upload')
 		p.startProcess( { 
 			'id': id, 
-			'outputfile': this.state.settings.outdir + '/' + details['outfile'] + '.mp4', 
+			'outputfile': this.state.viddetail[id]['donefile'], 
 			'speaker': details['speaker'], 
 			'title': details['viddetail'].title.rendered,
 			'description': details['viddetail'].content.rendered,
@@ -133,7 +149,8 @@ class Upload extends React.Component {
 	render() {
 		var listReady = Object.keys( this.state.viddetail).map( i => {
 			var item = this.state.viddetail[i];
-			if( ! this.state.details || this.state.viddetail[i]['doneprocess'] !== 'on' )  { return; }
+			if( ! this.state.details || ! this.state.viddetail[i]['doneprocess'] 
+				|| this.state.viddetail[i]['doneupload'])  { return; }
 
 			var detail = this.getDetailFromID( i );
 			return (

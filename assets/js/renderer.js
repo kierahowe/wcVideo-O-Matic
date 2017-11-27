@@ -129,7 +129,6 @@ function getRemoteContent(settings, type, callback) {
 		return;
 	}
 	_jquery2.default.ajax(url, {}).done(function (result) {
-		console.log(result);
 		cached[url] = result;
 		callback(result);
 	}).fail(function () {
@@ -160,6 +159,9 @@ function getPresentationSettings(settings, callback) {
 						}
 					}
 					d[_i].speakers = p;
+
+					d[_i].title.rendered = decodeHTML(d[_i].title.rendered);
+					d[_i].content.rendered = decodeHTML(d[_i].content.rendered);
 				}
 				d.sort(function (a, b) {
 					if (a.meta._wcpt_session_time === b.meta._wcpt_session_time) {
@@ -175,7 +177,7 @@ function getPresentationSettings(settings, callback) {
 }
 
 // The goal here is to eventually load the cats from the remote server at wordpress.tv, however, 
-// right now we are just going to load from the default_cats.json file
+// right now we are just going to always load from the default_cats.json file
 function getCategories() {
 	var fs = require('fs');
 	var cats = getSettings('cats');
@@ -194,6 +196,35 @@ function getCategories() {
 	}
 
 	return cats;
+}
+
+function decodeHTML(instr) {
+	var entities = {
+		'amp': '&',
+		'apos': '\'',
+		'lt': '<',
+		'gt': '>',
+		'quot': '"',
+		'nbsp': '\xa0',
+		'#8212': '-',
+		'#8211': '-',
+		'#8217': '\'',
+		'#8230': '...'
+	};
+	var entityPattern = /&([^;]+);/ig;
+
+	return instr.replace(entityPattern, function (match, entity) {
+		entity = entity.toLowerCase();
+		if (entities.hasOwnProperty(entity)) {
+			return entities[entity];
+		}
+		if (entity[0] === '#') {
+			console.log(parseInt(entity.substring(1), 16), entity);
+			return String.fromCharCode(parseInt(entity.substring(1), 16));
+		}
+		// return original string if there is no matching entity (no replace)
+		return match;
+	});
 }
 'use strict';
 
@@ -440,23 +471,6 @@ var SettingsInput = function (_React$Component) {
 							React.createElement(
 								'td',
 								null,
-								'Background Image'
-							),
-							React.createElement(
-								'td',
-								null,
-								React.createElement(FileSelect, { id: 'imagefile', value: this.state.settings.imagefile,
-									onChange: function onChange(e) {
-										return _this3.handleLostFocus(e);
-									} })
-							)
-						),
-						React.createElement(
-							'tr',
-							null,
-							React.createElement(
-								'td',
-								null,
 								'Output Directory'
 							),
 							React.createElement(
@@ -497,6 +511,100 @@ var SettingsInput = function (_React$Component) {
 								'td',
 								null,
 								React.createElement('textarea', { id: 'credits', rows: '6', cols: '40', value: this.state.settings.credits,
+									onBlur: function onBlur(e) {
+										return _this3.handleLostFocus(e);
+									},
+									onChange: function onChange(e) {
+										return _this3.handleChange(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
+								'Background Image'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement(FileSelect, { id: 'imagefile', value: this.state.settings.imagefile,
+									onChange: function onChange(e) {
+										return _this3.handleLostFocus(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
+								'Font'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement(FileSelect, { id: 'fontfile', value: this.state.settings.fontfile,
+									onChange: function onChange(e) {
+										return _this3.handleLostFocus(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
+								'Font Size'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement('input', { type: 'number', id: 'fontsize', value: this.state.settings.fontsize,
+									onBlur: function onBlur(e) {
+										return _this3.handleLostFocus(e);
+									},
+									onChange: function onChange(e) {
+										return _this3.handleChange(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
+								'Font Color'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement('input', { type: 'color', id: 'fontcolor', value: this.state.settings.fontcolor,
+									onBlur: function onBlur(e) {
+										return _this3.handleLostFocus(e);
+									},
+									onChange: function onChange(e) {
+										return _this3.handleChange(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
+								'Text Y Position (0-720)'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement('input', { type: 'number', id: 'text_y', value: this.state.settings.text_y,
 									onBlur: function onBlur(e) {
 										return _this3.handleLostFocus(e);
 									},
@@ -721,8 +829,10 @@ var Presentations = function (_React$Component) {
 
 			if (parseInt(this.state.currentItem) === parseInt(id)) {
 				return 'fa-spinner fa-spin';
-			} else if (this.state.viddetail[id]['novideo'] || this.state.viddetail[id]['donefile']) {
+			} else if (this.state.viddetail[id]['novideo'] || this.state.viddetail[id]['doneupload']) {
 				return 'fa-check';
+			} else if (this.state.viddetail[id]['doneprocess']) {
+				return 'fa-cloud-upload';
 			} else if (this.state.viddetail[id]['doneedit']) {
 				return 'fa-thumbs-o-up';
 			} else if (this.state.viddetail[id]['tmp_file']) {
@@ -744,6 +854,31 @@ var Presentations = function (_React$Component) {
 			delete x.processfail;
 			delete x.failmessage;
 			delete x.doneedit;
+			vd[id] = x;
+			this.setState({ viddetail: vd });
+			saveSettings('viddetail', vd);
+		}
+	}, {
+		key: 'clearItemProcessed',
+		value: function clearItemProcessed(id) {
+			console.log('clear', id);
+			var vd = this.state.viddetail;
+			var x = vd[id];
+			delete x.doneupload;
+			delete x.doneprocess;
+			vd[id] = x;
+			this.setState({ viddetail: vd });
+			saveSettings('viddetail', vd);
+		}
+	}, {
+		key: 'clearItemUpload',
+		value: function clearItemUpload(id) {
+			console.log('clear', id);
+			var vd = this.state.viddetail;
+			var x = vd[id];
+			delete x.doneupload;
+			delete x.failedupload;
+			delete x.returnout;
 			vd[id] = x;
 			this.setState({ viddetail: vd });
 			saveSettings('viddetail', vd);
@@ -834,6 +969,7 @@ var Presentations = function (_React$Component) {
 							),
 							item['title']['rendered'],
 							speaker,
+							' \u2019',
 							React.createElement(
 								'div',
 								{ className: 'expand_settings', onClick: function onClick(e) {
@@ -911,6 +1047,20 @@ var Presentations = function (_React$Component) {
 											return _this2.clearItem(item['id']);
 										} },
 									'Clear Processed Video'
+								),
+								React.createElement(
+									'button',
+									{ onClick: function onClick(e) {
+											return _this2.clearItemProcessed(item['id']);
+										} },
+									'Clear Processed'
+								),
+								React.createElement(
+									'button',
+									{ onClick: function onClick(e) {
+											return _this2.clearItemUpload(item['id']);
+										} },
+									'Clear Upload'
 								),
 								React.createElement(
 									'span',
@@ -1254,8 +1404,9 @@ var Process = function (_React$Component) {
 				this.setState({ progress: s });
 				if (val.complete) {
 					if (val.success === true) {
-						var vid = this.state.viddetails;
+						var vid = this.state.viddetail;
 						vid[this.state.currentid]['doneprocess'] = true;
+						vid[this.state.currentid]['donefile'] = val.outfile;
 						saveSettings('viddetail', vid);
 						this.setState({ viddetail: vid });
 					}
@@ -1348,17 +1499,21 @@ var Process = function (_React$Component) {
 
 			this.p.startProcess({
 				'id': id,
-				'outputfile': this.state.settings.outdir + '/' + details['outfile'] + '.mp4',
-				'imagefile': this.state.settings.imagefile,
+				'outputfile': JSON.parse(this.state.settings.outdir)[0] + '/' + details['outfile'] + '.mp4',
+				'imagefile': JSON.parse(this.state.settings.imagefile),
 				'speaker': details['speaker'],
 				'title': details['viddetail'].title.rendered,
 				'description': details['viddetail'].content.rendered,
 				'mainvideo': this.state.viddetail[id]['tmp_file'],
 				'credits': this.state.settings.credits,
 				'slides': this.state.viddetail[id]['slides'],
-				'tmpdir': this.state.settings.tmpdir,
+				'tmpdir': JSON.parse(this.state.settings.tmpdir),
 				'start': this.state.viddetail[id]['video_start'],
-				'end': this.state.viddetail[id]['video_end']
+				'end': this.state.viddetail[id]['video_end'],
+				'fontfile': JSON.parse(this.state.settings['fontfile']),
+				'fontsize': this.state.settings['fontsize'],
+				'text_y': this.state.settings['text_y'],
+				'fontcolor': this.state.settings['fontcolor']
 			});
 		}
 	}, {
@@ -1368,7 +1523,7 @@ var Process = function (_React$Component) {
 
 			var listReady = Object.keys(this.state.viddetail).map(function (i) {
 				var item = _this3.state.viddetail[i];
-				if (!_this3.state.details || _this3.state.viddetail[i]['doneedit'] !== 'on') {
+				if (!_this3.state.details || _this3.state.viddetail[i]['doneedit'] !== 'on' || _this3.state.viddetail[i]['doneprocess']) {
 					return;
 				}
 
@@ -1704,7 +1859,7 @@ var Upload = function (_React$Component) {
 	}, {
 		key: 'checkProcess',
 		value: function checkProcess() {
-			var p = require('electron').remote.require('./process');
+			var p = require('electron').remote.require('./upload');
 			if (this.state.currentid !== null) {
 				var val = p.getDetails();
 				var s = this.state.progress;
@@ -1712,16 +1867,29 @@ var Upload = function (_React$Component) {
 				s[this.state.currentid].state = val.status;
 				this.setState({ progress: s });
 				if (val.complete) {
+					var vid = this.state.viddetail;
+					if (val.success === true) {
+						vid[this.state.currentid]['doneupload'] = true;
+					} else {
+						vid[this.state.currentid]['failedupload'] = true;
+					}
+					vid[this.state.currentid]['returnout'] = val.detail;
+
+					saveSettings('viddetail', vid);
+					this.setState({ viddetail: vid });
+
 					this.doneitems[this.state.currentid] = 1;
 					this.setState({ currentid: null });
-					if (this.endit === 1) {
-						clearInterval(this.state.interval);
-						this.setState({ interval: null });
-					}
 				}
 			}
+
 			if (this.endit !== 1 && this.state.currentid === null) {
 				this.beginVideoUpload();
+			}
+
+			if (this.endit === 1) {
+				clearInterval(this.state.interval);
+				this.setState({ interval: null });
 			}
 		}
 	}, {
@@ -1773,14 +1941,15 @@ var Upload = function (_React$Component) {
 			var id = '';
 			this.endit = 0;
 			for (var key in this.state.viddetail) {
-				if (this.state.viddetail[key] && !this.state.viddetail[key]['donefile'] && this.state.viddetail[key]['doneprocess'] === 'on' && !this.doneitems[key]) {
+				if (this.state.viddetail[key] && this.state.viddetail[key]['donefile'] && this.state.viddetail[key]['doneprocess'] && !this.doneitems[key] && !this.state.viddetail[key]['doneupload']) {
 					id = key;
 					break;
 				}
 			}
+
 			if (id === '') {
 				this.endProcess();
-				if (this.doneitems.length === 0) {
+				if (Object.keys(this.doneitems).length === 0) {
 					alert('There are no videos to upload');
 				} else {
 					alert('All videos have been uploaded');
@@ -1802,7 +1971,7 @@ var Upload = function (_React$Component) {
 			var p = require('electron').remote.require('./upload');
 			p.startProcess({
 				'id': id,
-				'outputfile': this.state.settings.outdir + '/' + details['outfile'] + '.mp4',
+				'outputfile': this.state.viddetail[id]['donefile'],
 				'speaker': details['speaker'],
 				'title': details['viddetail'].title.rendered,
 				'description': details['viddetail'].content.rendered,
@@ -1816,7 +1985,7 @@ var Upload = function (_React$Component) {
 
 			var listReady = Object.keys(this.state.viddetail).map(function (i) {
 				var item = _this3.state.viddetail[i];
-				if (!_this3.state.details || _this3.state.viddetail[i]['doneprocess'] !== 'on') {
+				if (!_this3.state.details || !_this3.state.viddetail[i]['doneprocess'] || _this3.state.viddetail[i]['doneupload']) {
 					return;
 				}
 
