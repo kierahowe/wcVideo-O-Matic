@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "main": "main.js",
   "dependencies": {
-    "decode-html": "^2.0.0",
     "electron": "^1.7.9",
     "ffmpeg": "0.0.4",
     "fluent-ffmpeg": "^2.1.2",
@@ -12,9 +11,6 @@
     "react": "^16.0.0",
     "striptags": "^3.1.0",
     "video.js": "^6.2.8",
-    "videoshow": "^0.1.11",
-    "vlc": "0.0.4",
-    "vlc-command": "^1.1.1"
   },
   "license": "MIT",
   "babel": {
@@ -32,6 +28,5 @@
   },
   "scripts": {
     "build": "babel --presets es2015 assets/js/src/renderer.js assets/js/src/settings.js assets/js/src/presentation.js assets/js/src/editor.js assets/js/src/process.js assets/js/src/credits.js assets/js/src/fileselect.js assets/js/src/upload.js --out-file assets/js/renderer.js",
-    "start": "http-server"
   }
 }
