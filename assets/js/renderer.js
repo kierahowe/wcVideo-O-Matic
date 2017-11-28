@@ -201,15 +201,26 @@ function getCategories() {
 function decodeHTML(instr) {
 	var entities = {
 		'amp': '&',
-		'apos': '\'',
+		'apos': '’',
 		'lt': '<',
 		'gt': '>',
 		'quot': '"',
 		'nbsp': '\xa0',
 		'#8212': '-',
 		'#8211': '-',
-		'#8217': '\'',
-		'#8230': '...'
+		'#8217': '’',
+		'#8230': '...',
+		'#8216': '‘',
+		'#8218': '‚',
+		'#8220': '“',
+		'#8221': '”',
+		'#8222': '„',
+		'#8224': '†',
+		'#8225': '‡',
+		'#8226': '•',
+		'#8240': '‰',
+		'#8364': '€',
+		'#8482': '™'
 	};
 	var entityPattern = /&([^;]+);/ig;
 
@@ -219,7 +230,6 @@ function decodeHTML(instr) {
 			return entities[entity];
 		}
 		if (entity[0] === '#') {
-			console.log(parseInt(entity.substring(1), 16), entity);
 			return String.fromCharCode(parseInt(entity.substring(1), 16));
 		}
 		// return original string if there is no matching entity (no replace)
@@ -703,7 +713,7 @@ var Presentations = function (_React$Component) {
 					if (typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '') {
 						this.currentOutname = '.';
 					} else {
-						this.currentOutname = this.state.settings.tmpdir;
+						this.currentOutname = JSON.parse(this.state.settings.tmpdir)[0];
 					}
 					this.currentOutname += '/' + this.state.viddetail[vid].videofile.replace(/[^a-zA-Z0-9\_]/g, '_') + '.mp4';
 					this.setState({ currentItem: parseInt(vid) });
@@ -1162,7 +1172,7 @@ var Editor = function (_React$Component) {
 		}
 		if (typeof viddet[selectedVideo]['video_start'] === 'undefined') {
 			// failed this should really never happen
-			viddet[selectedVideo]['video_start'] = '0;00;00';
+			viddet[selectedVideo]['video_start'] = '0';
 		}
 		if (typeof viddet[selectedVideo]['video_end'] === 'undefined') {
 			// failed this should really never happen
@@ -1471,7 +1481,8 @@ var Process = function (_React$Component) {
 			var id = '';
 			this.endit = 0;
 			for (var key in this.state.viddetail) {
-				if (this.state.viddetail[key] && !this.state.viddetail[key]['donefile'] && this.state.viddetail[key]['doneedit'] === 'on' && !this.doneitems[key]) {
+				console.log(key, this.state.viddetail[key], !this.state.viddetail[key]['donefile'], this.state.viddetail[key]['doneedit'] === 'on', !this.doneitems[key]);
+				if (this.state.viddetail[key] && !this.state.viddetail[key]['doneprocess'] && this.state.viddetail[key]['doneedit'] && !this.doneitems[key]) {
 					id = key;
 					break;
 				}

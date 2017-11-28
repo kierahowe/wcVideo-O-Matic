@@ -12,7 +12,7 @@ class Editor extends React.Component {
 		}
 		if( typeof viddet[ selectedVideo ]['video_start'] === 'undefined' ) { 
 			// failed this should really never happen
-			viddet[ selectedVideo ]['video_start']	= '0;00;00';
+			viddet[ selectedVideo ]['video_start']	= '0';
 		}
 		if( typeof viddet[ selectedVideo ]['video_end'] === 'undefined' ) { 
 			// failed this should really never happen

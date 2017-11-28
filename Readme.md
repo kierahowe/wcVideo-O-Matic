@@ -2,6 +2,8 @@
 
 A Node.js/Electron.io application to process WordCamp Videos, adding an opening and closing and transcoding to the appropriate size and setup, then uploading to WordPress.tv
 
+There is a demo for the software at https://youtu.be/FGaDtTmTRus
+
 
 # Install
 

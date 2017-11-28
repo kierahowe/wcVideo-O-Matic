@@ -106,8 +106,10 @@ class Process extends React.Component {
 		var id = '';
 		this.endit = 0;
 		for( var key in this.state.viddetail ) { 
-			if ( this.state.viddetail[key] && ! this.state.viddetail[key]['donefile'] &&
-				this.state.viddetail[key]['doneedit'] === 'on' && !this.doneitems[key] ) { 
+			console.log( key, this.state.viddetail[key], ! this.state.viddetail[key]['donefile'], this.state.viddetail[key]['doneedit'] === 'on', 
+				!this.doneitems[key]);
+			if ( this.state.viddetail[key] && ! this.state.viddetail[key]['doneprocess'] &&
+				this.state.viddetail[key]['doneedit'] && !this.doneitems[key] ) { 
 				id = key; 
 				break;
 			}

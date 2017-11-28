@@ -214,14 +214,14 @@ function getCategories() {
 function decodeHTML( instr ) { 
 	var entities = {
 		'amp': '&',
-		'apos': '\'',
+		'apos': '’',
 		'lt': '<',
 		'gt': '>',
 		'quot': '"',
 		'nbsp': '\xa0',
 		'#8212': '-',
 		'#8211': '-',
-		'#8217': '\'',
+		'#8217': '’',
 		'#8230': '...',
 		'#8216': '‘', 
 		'#8218': '‚', 

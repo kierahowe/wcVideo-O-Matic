@@ -62,7 +62,7 @@ class Presentations extends React.Component {
 				if( typeof this.state.settings.tmpdir === 'undefined' || this.state.settings.tmpdir === null || this.state.settings.tmpdir === '' ) { 
 					this.currentOutname = '.';
 				} else { 
-					this.currentOutname = this.state.settings.tmpdir;
+					this.currentOutname = JSON.parse( this.state.settings.tmpdir )[0];
 				}
 				this.currentOutname += '/' + this.state.viddetail[ vid ].videofile.replace( /[^a-zA-Z0-9\_]/g, '_') + '.mp4';
 				this.setState( { currentItem: parseInt( vid ) } );
