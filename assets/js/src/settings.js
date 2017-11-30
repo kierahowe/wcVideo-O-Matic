@@ -97,6 +97,18 @@ class SettingsInput extends React.Component {
 								onChange={( e ) => this.handleChange( e )}/></td>
 						</tr>
 						<tr>
+							<td>Your Name</td>
+							<td><input type="text" id="upload_by" value={this.state.settings.upload_by} 
+								onBlur={(e) => this.handleLostFocus(e) } 
+								onChange={( e ) => this.handleChange( e )}/></td>
+						</tr>
+						<tr>
+							<td>Your Email</td>
+							<td><input type="text" id="email_addr" value={this.state.settings.email_addr} 
+								onBlur={(e) => this.handleLostFocus(e) } 
+								onChange={( e ) => this.handleChange( e )}/></td>
+						</tr>
+						<tr>
 							<td>Language</td>
 							<td><input type="text" id="language" value={this.state.settings.language} 
 								onBlur={(e) => this.handleLostFocus(e) } 

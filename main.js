@@ -51,7 +51,7 @@ app.on('ready', function() {
 
 	})
 
-	openNewWindow ('index.html', { });   //devTools: true 
+	openNewWindow ('index.html', { devTools: true });   //devTools: true 
 } );
 
 

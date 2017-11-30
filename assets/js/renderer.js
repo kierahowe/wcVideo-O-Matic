@@ -399,6 +399,46 @@ var SettingsInput = function (_React$Component) {
 							React.createElement(
 								'td',
 								null,
+								'Your Name'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement('input', { type: 'text', id: 'upload_by', value: this.state.settings.upload_by,
+									onBlur: function onBlur(e) {
+										return _this3.handleLostFocus(e);
+									},
+									onChange: function onChange(e) {
+										return _this3.handleChange(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
+								'Your Email'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement('input', { type: 'text', id: 'email_addr', value: this.state.settings.email_addr,
+									onBlur: function onBlur(e) {
+										return _this3.handleLostFocus(e);
+									},
+									onChange: function onChange(e) {
+										return _this3.handleChange(e);
+									} })
+							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
 								'Language'
 							),
 							React.createElement(
@@ -1878,16 +1918,16 @@ var Upload = function (_React$Component) {
 				s[this.state.currentid].state = val.status;
 				this.setState({ progress: s });
 				if (val.complete) {
-					var vid = this.state.viddetail;
-					if (val.success === true) {
-						vid[this.state.currentid]['doneupload'] = true;
-					} else {
-						vid[this.state.currentid]['failedupload'] = true;
-					}
-					vid[this.state.currentid]['returnout'] = val.detail;
+					// var vid = this.state.viddetail;
+					// if( val.success === true ) { 
+					// 	vid[ this.state.currentid ]['doneupload'] = true;
+					// } else { 
+					// 	vid[ this.state.currentid ]['failedupload'] = true;
+					// }
+					// vid[ this.state.currentid ]['returnout'] = val.detail;
 
-					saveSettings('viddetail', vid);
-					this.setState({ viddetail: vid });
+					// saveSettings( 'viddetail', vid );
+					// this.setState( { viddetail: vid } );
 
 					this.doneitems[this.state.currentid] = 1;
 					this.setState({ currentid: null });

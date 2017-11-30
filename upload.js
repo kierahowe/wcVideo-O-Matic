@@ -73,6 +73,10 @@ exports.sendFile = ( args, callback ) => {
 			var fs = require('fs');
 			
 			var form = new FormData();
+			form.append('wptv_uploaded_by', settings['upload_by'] );
+			form.append('wptv_email', settings['email_addr'] );
+
+			form.append('wptv_honey', '' );
 			form.append('wptvvideon', data );
 			form.append('_wp_http_referer', '/submit-video/' );
 			form.append('action', 'wptv_video_upload' );
@@ -95,7 +99,7 @@ exports.sendFile = ( args, callback ) => {
 			}
 			form.append('wptv_video_description', striptags( args['description'] ) );
 			
-			args['outputfile'] = '/Users/kiera/Documents/Development/wcvideoomatic/tmp/endfile.mp4';
+			//args['outputfile'] = '/Users/kiera/Documents/Development/wcvideoomatic/tmp/endfile.mp4';
 			
 			var stat = fs.statSync( args['outputfile'] );
 			var filesz = stat.size;
@@ -119,8 +123,8 @@ exports.sendFile = ( args, callback ) => {
 		 	var options = {
 				method: 'post',
 				port: 443, 
-				host: 'wordpress.tv',
-				path: '/submit-video/',
+				host: 'wptv.wordpress.com',
+				path: '/wp-admin/admin-post.php',
 				headers: form.getHeaders()
 			};			
 
