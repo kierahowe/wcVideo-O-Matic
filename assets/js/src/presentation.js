@@ -248,9 +248,11 @@ class Presentations extends React.Component {
 			}
 		}
 
+		var pcnt = 0;
 		if( this.state.details ) {
 			var last = null;
 			var listItems = this.state.details.map( item => {
+				if( ! this.state.viddetail[ item['id'] ].novideo ) { pcnt ++; }
 				let speaker = '';
 				for( let i = 0; i < item.speakers.length; i ++) {
 					if( this.state.speakers[ item.speakers[i] ] ) { 
@@ -324,7 +326,7 @@ class Presentations extends React.Component {
 		}
 		return (<div className="presentation_input"><br/>
 					<DisplayStatus/>
-					<h1>Presentations</h1>
+					<h1>Presentations ({pcnt})</h1>
 					<div className="swirlwait" style={ { display: (this.state === null || this.state.details === null) ? 'block' : 'none' } }>
 						Loading ...
 					</div>

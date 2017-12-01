@@ -987,9 +987,13 @@ var Presentations = function (_React$Component) {
 				}
 			}
 
+			var pcnt = 0;
 			if (this.state.details) {
 				var last = null;
 				var listItems = this.state.details.map(function (item) {
+					if (!_this2.state.viddetail[item['id']].novideo) {
+						pcnt++;
+					}
 					var speaker = '';
 					for (var _i = 0; _i < item.speakers.length; _i++) {
 						if (_this2.state.speakers[item.speakers[_i]]) {
@@ -1131,7 +1135,9 @@ var Presentations = function (_React$Component) {
 				React.createElement(
 					'h1',
 					null,
-					'Presentations'
+					'Presentations (',
+					pcnt,
+					')'
 				),
 				React.createElement(
 					'div',
