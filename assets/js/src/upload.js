@@ -40,19 +40,20 @@ class Upload extends React.Component {
 			s[ this.state.currentid ].state = val.status;
 			this.setState( { progress: s });
 			if( val.complete ) { 
-				// var vid = this.state.viddetail;
-				// if( val.success === true ) { 
-				// 	vid[ this.state.currentid ]['doneupload'] = true;
-				// } else { 
-				// 	vid[ this.state.currentid ]['failedupload'] = true;
-				// }
-				// vid[ this.state.currentid ]['returnout'] = val.detail;
+				var vid = this.state.viddetail;
+				if( val.success === true ) { 
+					vid[ parseInt( this.state.currentid ) ]['doneupload'] = true;
+				} else { 
+					vid[ parseInt( this.state.currentid ) ]['failedupload'] = true;
+				}
+				vid[ parseInt( this.state.currentid ) ]['returnout'] = val.detail;
+				this.setState( { viddetail: vid } );
 
-				// saveSettings( 'viddetail', vid );
-				// this.setState( { viddetail: vid } );
+				saveSettings( 'viddetail', vid, () => { 
+					this.setState( { currentid: null } ); 
+				} );
 
 				this.doneitems[ this.state.currentid ] = 1;
-				this.setState( { currentid: null } ); 
 			}
 		}
 

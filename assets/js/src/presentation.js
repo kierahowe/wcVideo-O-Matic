@@ -160,8 +160,10 @@ class Presentations extends React.Component {
 		}
 
 		if( parseInt( this.state.currentItem ) === parseInt( id ) ) { 
-			return 'fa-spinner fa-spin'
-		} else if ( this.state.viddetail[ id ]['novideo'] || this.state.viddetail[ id ]['doneupload'] ) {
+			return 'fa-spinner fa-spin';
+		} else if ( this.state.viddetail[ id ]['novideo'] ) { 
+			return 'fa-check-circle-o';
+		} else if ( this.state.viddetail[ id ]['doneupload'] ) {
 			return 'fa-check';
 		} else if ( this.state.viddetail[ id ]['doneprocess'] ) { 
 			return 'fa-cloud-upload';
@@ -272,7 +274,7 @@ class Presentations extends React.Component {
 							</div>
 							
 						
-							{item['title']['rendered']}{speaker} &#8217;
+							{item['title']['rendered']}{speaker}
 	
 							<div className="expand_settings" onClick={( e ) => this.toggleDisplaySettings( item['id'] ) }>
 								<i className="fa fa-expand" aria-hidden="true"></i>

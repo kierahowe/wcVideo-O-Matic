@@ -123,13 +123,13 @@ function getSettings( key ) {
 	}
 }
 
-function saveSettings( key, settings ) { 
+function saveSettings( key, settings, callback ) { 
 	var fs = require('fs');
 	
 	var s = getSettings( '' );
 	s[ key ] = settings;
 
-	fs.writeFile('settings.json', JSON.stringify( s ), function() { } ); 
+	fs.writeFile('settings.json', JSON.stringify( s ), callback ); 
 }
 
 function getRemoteContent( settings, type, callback ) { 

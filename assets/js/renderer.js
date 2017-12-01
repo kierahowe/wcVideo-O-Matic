@@ -110,13 +110,13 @@ function getSettings(key) {
 	}
 }
 
-function saveSettings(key, settings) {
+function saveSettings(key, settings, callback) {
 	var fs = require('fs');
 
 	var s = getSettings('');
 	s[key] = settings;
 
-	fs.writeFile('settings.json', JSON.stringify(s), function () {});
+	fs.writeFile('settings.json', JSON.stringify(s), callback);
 }
 
 function getRemoteContent(settings, type, callback) {
@@ -879,7 +879,9 @@ var Presentations = function (_React$Component) {
 
 			if (parseInt(this.state.currentItem) === parseInt(id)) {
 				return 'fa-spinner fa-spin';
-			} else if (this.state.viddetail[id]['novideo'] || this.state.viddetail[id]['doneupload']) {
+			} else if (this.state.viddetail[id]['novideo']) {
+				return 'fa-check-circle-o';
+			} else if (this.state.viddetail[id]['doneupload']) {
 				return 'fa-check';
 			} else if (this.state.viddetail[id]['doneprocess']) {
 				return 'fa-cloud-upload';
@@ -1019,7 +1021,6 @@ var Presentations = function (_React$Component) {
 							),
 							item['title']['rendered'],
 							speaker,
-							' \u2019',
 							React.createElement(
 								'div',
 								{ className: 'expand_settings', onClick: function onClick(e) {
@@ -1910,6 +1911,8 @@ var Upload = function (_React$Component) {
 	}, {
 		key: 'checkProcess',
 		value: function checkProcess() {
+			var _this2 = this;
+
 			var p = require('electron').remote.require('./upload');
 			if (this.state.currentid !== null) {
 				var val = p.getDetails();
@@ -1918,19 +1921,20 @@ var Upload = function (_React$Component) {
 				s[this.state.currentid].state = val.status;
 				this.setState({ progress: s });
 				if (val.complete) {
-					// var vid = this.state.viddetail;
-					// if( val.success === true ) { 
-					// 	vid[ this.state.currentid ]['doneupload'] = true;
-					// } else { 
-					// 	vid[ this.state.currentid ]['failedupload'] = true;
-					// }
-					// vid[ this.state.currentid ]['returnout'] = val.detail;
+					var vid = this.state.viddetail;
+					if (val.success === true) {
+						vid[parseInt(this.state.currentid)]['doneupload'] = true;
+					} else {
+						vid[parseInt(this.state.currentid)]['failedupload'] = true;
+					}
+					vid[parseInt(this.state.currentid)]['returnout'] = val.detail;
+					this.setState({ viddetail: vid });
 
-					// saveSettings( 'viddetail', vid );
-					// this.setState( { viddetail: vid } );
+					saveSettings('viddetail', vid, function () {
+						_this2.setState({ currentid: null });
+					});
 
 					this.doneitems[this.state.currentid] = 1;
-					this.setState({ currentid: null });
 				}
 			}
 
@@ -1976,11 +1980,11 @@ var Upload = function (_React$Component) {
 	}, {
 		key: 'startProcess',
 		value: function startProcess(e) {
-			var _this2 = this;
+			var _this3 = this;
 
 			if (this.state.interval === null) {
 				var inter = setInterval(function (e) {
-					_this2.checkProcess();
+					_this3.checkProcess();
 				}, 200);
 				this.setState({ interval: inter });
 				this.doneitems = {};
@@ -2032,15 +2036,15 @@ var Upload = function (_React$Component) {
 	}, {
 		key: 'render',
 		value: function render() {
-			var _this3 = this;
+			var _this4 = this;
 
 			var listReady = Object.keys(this.state.viddetail).map(function (i) {
-				var item = _this3.state.viddetail[i];
-				if (!_this3.state.details || !_this3.state.viddetail[i]['doneprocess'] || _this3.state.viddetail[i]['doneupload']) {
+				var item = _this4.state.viddetail[i];
+				if (!_this4.state.details || !_this4.state.viddetail[i]['doneprocess'] || _this4.state.viddetail[i]['doneupload']) {
 					return;
 				}
 
-				var detail = _this3.getDetailFromID(i);
+				var detail = _this4.getDetailFromID(i);
 				return React.createElement(
 					'div',
 					{ className: 'pvideo_select', key: i
@@ -2049,32 +2053,32 @@ var Upload = function (_React$Component) {
 					detail['speaker'] !== '' ? ' By ' + detail['speaker'] : '',
 					React.createElement(
 						'div',
-						{ className: 'process_detail', style: { display: typeof _this3.state.progress[i] !== 'undefined' ? 'block' : 'none' } },
+						{ className: 'process_detail', style: { display: typeof _this4.state.progress[i] !== 'undefined' ? 'block' : 'none' } },
 						React.createElement(
 							'div',
 							{ className: 'percent' },
 							React.createElement(
 								'div',
-								{ className: 'percentblock', style: { width: _this3.state.progress[i] ? _this3.state.progress[i].percent : 0 } },
+								{ className: 'percentblock', style: { width: _this4.state.progress[i] ? _this4.state.progress[i].percent : 0 } },
 								React.createElement(
 									'span',
-									{ style: { display: (_this3.state.progress[i] ? _this3.state.progress[i].percent : 0) >= 50 ? 'inline-block' : 'none' } },
-									_this3.state.progress[i] ? _this3.state.progress[i].percent : 0,
+									{ style: { display: (_this4.state.progress[i] ? _this4.state.progress[i].percent : 0) >= 50 ? 'inline-block' : 'none' } },
+									_this4.state.progress[i] ? _this4.state.progress[i].percent : 0,
 									'%'
 								),
 								'\xA0'
 							),
 							React.createElement(
 								'span',
-								{ style: { display: (_this3.state.progress[i] ? _this3.state.progress[i].percent : 0) < 50 ? 'inline-block' : 'none' } },
-								_this3.state.progress[i] ? _this3.state.progress[i].percent : 0,
+								{ style: { display: (_this4.state.progress[i] ? _this4.state.progress[i].percent : 0) < 50 ? 'inline-block' : 'none' } },
+								_this4.state.progress[i] ? _this4.state.progress[i].percent : 0,
 								'%'
 							)
 						),
 						React.createElement(
 							'div',
 							{ className: 'status' },
-							_this3.state.progress[i] ? _this3.state.progress[i].state : ''
+							_this4.state.progress[i] ? _this4.state.progress[i].state : ''
 						)
 					)
 				);
@@ -2090,19 +2094,19 @@ var Upload = function (_React$Component) {
 					React.createElement('i', { className: this.state.interval === null ? 'fa fa-play' : 'fa fa-refresh fa-spin', 'aria-hidden': 'true',
 						title: 'Start Processing',
 						onClick: function onClick(e) {
-							return _this3.startProcess(e);
+							return _this4.startProcess(e);
 						}
 					}),
 					React.createElement('i', { className: 'fa fa-stop', 'aria-hidden': 'true',
 						title: 'Stop Processing after this item',
 						onClick: function onClick(e) {
-							return _this3.endProcess(e);
+							return _this4.endProcess(e);
 						}
 					}),
 					React.createElement('i', { className: 'fa fa-window-close-o', 'aria-hidden': 'true',
 						title: 'Stop Processing right now',
 						onClick: function onClick(e) {
-							_this3.killProcess(e);
+							_this4.killProcess(e);
 						}
 					})
 				),

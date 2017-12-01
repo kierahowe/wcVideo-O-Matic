@@ -32,11 +32,12 @@ exports.sendFile = ( args, callback ) => {
 	var fs = require('fs');
 	var striptags = require('striptags');
 
-	var contents = fs.readFileSync("settings.json");
+	var contents;
 	try { 
+		contents = fs.readFileSync("./settings.json", 'utf8');
 		contents = JSON.parse( contents );
 	} catch ( e ) { 
-		console.log('An error occurred getting the settings for upload: ' + e.message);
+		console.log('An error occurred getting the settings for upload: ' + e.message );
 		status = 'An error occurred getting the settings for upload: ' + e.message;
 		percent = 100;
 		complete = true;
@@ -99,8 +100,6 @@ exports.sendFile = ( args, callback ) => {
 			}
 			form.append('wptv_video_description', striptags( args['description'] ) );
 			
-			//args['outputfile'] = '/Users/kiera/Documents/Development/wcvideoomatic/tmp/endfile.mp4';
-			
 			var stat = fs.statSync( args['outputfile'] );
 			var filesz = stat.size;
 			var stream = fs.createReadStream( args['outputfile'] );
@@ -117,8 +116,6 @@ exports.sendFile = ( args, callback ) => {
 			form.append('wptv_file', stream);
 			detail = '';
 
-			var url = 'https://wordpress.tv/submit-video/';
-
 			var http = require('https');
 		 	var options = {
 				method: 'post',
@@ -128,9 +125,7 @@ exports.sendFile = ( args, callback ) => {
 				headers: form.getHeaders()
 			};			
 
-			//url = 'http://family.local/submit-video/';
-//			form.submit(url, function(err, res) {
-			const req = https.request(options, (res) => {
+			const req = http.request(options, (res) => {
 				console.log( res.statusCode, '----', res );
 				res.on( 'data', function( chunk ) { 
 					detail += chunk.toString();

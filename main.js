@@ -3,54 +3,9 @@ global.CURRENTVERSION = '0.1.0';
 
 var app = require('electron').app; // Module to control application life.
 var BrowserWindow = require('electron').BrowserWindow;  // Module to create native browser window.
-var vlcInfo = { };
 
 /*  When ready */
 app.on('ready', function() {  
-	// var vlc = require('vlc')([
-	// 	  '-I', 'dummy',
-	// 	  '-V', 'dummy',
-	// 	  '--verbose', '1',
-	// 	  '--no-video-title-show',
-	// 	  '--no-disable-screensaver',
-	// 	  '--no-snapshot-preview',
-	// 	]);
-
-	// var media = vlc.mediaFromFile( '/Volumes/Video Disk/video/sat/129/Shanta-1005-rm129.mov');
-	var cp = require('child_process')
-	var vlcCommand = require('vlc-command')
-
-	vlcCommand(function (err, cmd) {
-		if (err) {
-			console.error('could not find vlc command path');
-			return;
-		}
-
-		vlcInfo['cmd'] = cmd;
-		console.log( vlcInfo['cmd'] );
-
-		var f = function( err, stdout ) { 
-			if (err) { 
-				console.error(err);
-				return;
-			}
-			vlcInfo['FullInfo'] = stdout;
-			if( stdout.substring( 0, 12 ) === 'VLC version ') {
-				var r = stdout.substring( 12 ).split( ' ' );
-				vlcInfo['version'] = r[0];
-				vlcInfo['codename'] = r[1];
-				vlcInfo['buildversion'] = r[2];
-			}
-		}
-		
-		if (process.platform === 'win32') {
-			cp.execFile(cmd, ['--version'], f );
-		} else {
-			cp.exec(cmd + ' --version', f );
-		}
-
-	})
-
 	openNewWindow ('index.html', { devTools: true });   //devTools: true 
 } );
 
