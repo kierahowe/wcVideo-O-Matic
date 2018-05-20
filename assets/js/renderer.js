@@ -991,7 +991,7 @@ var Presentations = function (_React$Component) {
 			if (this.state.details) {
 				var last = null;
 				var listItems = this.state.details.map(function (item) {
-					if (!_this2.state.viddetail[item['id']].novideo) {
+					if (!_this2.state.viddetail[item['id']] || !_this2.state.viddetail[item['id']].novideo) {
 						pcnt++;
 					}
 					var speaker = '';

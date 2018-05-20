@@ -252,7 +252,7 @@ class Presentations extends React.Component {
 		if( this.state.details ) {
 			var last = null;
 			var listItems = this.state.details.map( item => {
-				if( ! this.state.viddetail[ item['id'] ].novideo ) { pcnt ++; }
+				if( ! this.state.viddetail[ item['id'] ] || ! this.state.viddetail[ item['id'] ].novideo ) { pcnt ++; }
 				let speaker = '';
 				for( let i = 0; i < item.speakers.length; i ++) {
 					if( this.state.speakers[ item.speakers[i] ] ) { 
