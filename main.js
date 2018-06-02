@@ -6,7 +6,7 @@ var BrowserWindow = require('electron').BrowserWindow;  // Module to create nati
 
 /*  When ready */
 app.on('ready', function() {  
-	openNewWindow ('index.html', {devTools: true  });   //devTools: true 
+	openNewWindow ('index.html', { });   //devTools: true 
 } );
 
 
