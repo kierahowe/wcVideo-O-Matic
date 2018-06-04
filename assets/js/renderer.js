@@ -1555,6 +1555,10 @@ var Process = function (_React$Component) {
 				return;
 			}
 
+			if (!this.state.settings['fontfile']) {
+				alert('You must have a font set to process');return;
+			}
+
 			this.p.startProcess({
 				'id': id,
 				'outputfile': JSON.parse(this.state.settings.outdir)[0] + '/' + details['outfile'] + '.mp4',

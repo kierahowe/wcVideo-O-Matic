@@ -13,7 +13,7 @@ exports.startProcess = ( args ) => {
 	
 	success = false;
 	percent = 0;
-	status = 'Starting video processing';
+	status = 'Starting video processingx';
 	complete = false;
 	curid = args['id'];
 	arg = args;
@@ -26,7 +26,7 @@ exports.startProcess = ( args ) => {
 	};
 
 	outfile = args['outputfile'];
-	console.log( args );
+	console.log( 'x', args );
 
 	this.buildImageVideo( args['imagefile'][0], args['tmpdir'][0] + '/startfile.mp4', '', 
 						args['speaker'] + '\n' + args['title'], param, () => { 
