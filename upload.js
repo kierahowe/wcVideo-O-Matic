@@ -82,7 +82,7 @@ exports.sendFile = ( args, callback ) => {
 			form.append('_wp_http_referer', '/submit-video/' );
 			form.append('action', 'wptv_video_upload' );
 			form.append('wptv_video_wordcamp', 'on' );
-			form.append('wptv_video_title', args['title'].replace('&amp;', '&') );
+			form.append('wptv_video_title', args['speaker'] + ': ' + args['title'].replace('&amp;', '&') );
 			form.append('wptv_language', settings['language'] );
 			if( typeof settings['cats'] !== undefined ) { 
 				for( var i = 0; i < settings['cats'].length; i++ ) { 
