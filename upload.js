@@ -59,14 +59,19 @@ exports.sendFile = ( args, callback ) => {
 		complete = true;
 		return;
 	}
-	console.log( 'starting upload ', complete);
-
-	https.get( 'https://wordpress.tv/submit-video/', (result) => {
+	var opt = {
+		host: 'wordpress.tv',
+		path: '/submit-video/',
+		strictSSL: false,
+	};			
+	console.log( 'starting upload ', opt );
+	let req = https.get( opt, (result) => {
   		var page = '';
   		result.on('data', (d) => { 
   			page += d;
   		});
   		result.on('end', () => { 
+  			console.log( 'Got first page' );
   			var loc = page.indexOf( '<input type="hidden" id="wptvvideon" name="wptvvideon" value="' );
   			var data = page.substring( loc + 62, page.indexOf( '>', loc ) - 3 );
  			
@@ -93,8 +98,8 @@ exports.sendFile = ( args, callback ) => {
 			form.append('wptv_speakers', args['speaker'] );
 			form.append('wptv_event', settings['event'] );
 
-			if( typeof args['slides'] === 'undefined' ) { 
-				form.append('wptv_slides_url', '' );
+			if( typeof args['slides'] === 'undefined' || args['slides'] === '' ) { 
+				form.append('wptv_slides_url', args['link'] ? args['link'] : '' );
 			} else { 
 				form.append('wptv_slides_url', args['slides'] );
 			}
@@ -122,11 +127,13 @@ exports.sendFile = ( args, callback ) => {
 				port: 443, 
 				host: 'wptv.wordpress.com',
 				path: '/wp-admin/admin-post.php',
-				headers: form.getHeaders()
+				headers: form.getHeaders(),
+				strictSSL: false,
 			};			
 
+			console.log( 'posting to form', options );
 			const req = http.request(options, (res) => {
-				console.log( res.statusCode, '----', res );
+				console.log( 'Returned: code:' + res.statusCode + ' and headers: ', res.headers );
 				res.on( 'data', function( chunk ) { 
 					detail += chunk.toString();
 				});
@@ -163,6 +170,15 @@ exports.sendFile = ( args, callback ) => {
 					success = false;
 		  		});
 			});
+
+			req.on('error', ( e ) => { 
+				console.log( 'Failed on http3', e.message );
+				status = 'Failed to upload';
+				percent = 100;
+				complete = true;
+				success = false;
+	  		} );
+
 			form.pipe(req);
   		});
   		result.on('error', ( e ) => { 
@@ -172,6 +188,14 @@ exports.sendFile = ( args, callback ) => {
 			complete = true;
 			success = false;
   		});
+	} );
+
+	req.on('error', ( e ) => { 
+		console.log( 'Failed to connect1', e );
+		status = 'Failed to connect to WPTV site';
+		percent = 100;
+		complete = true;
+		success = false;
 	});
 
 	return 0; 

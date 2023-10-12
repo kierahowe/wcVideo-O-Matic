@@ -138,7 +138,7 @@ class Process extends React.Component {
 		if( ! this.state.settings['fontfile'] ) { alert( 'You must have a font set to process' ); return; }
 		if( ! this.state.settings.outdir ) { alert( 'You must have a outdir set to process'); return; }
 		if( ! this.state.settings.imagefile ) { alert( 'You must have a imagefile set to process'); return; }
-		if( ! this.state.settings.credits ) { alert( 'You must have a credits set to process'); return; }
+		//if( ! this.state.settings.credits ) { alert( 'You must have a credits set to process'); return; }
 		if( ! this.state.settings.tmpdir ) { alert( 'You must have a tmpdir set to process'); return; }
 		if( ! this.state.settings['fontsize'] ) { alert( 'You must have a fontsize set to process'); return; }
 		if( ! this.state.settings['text_y'] ) { alert( 'You must have a text_y set to process'); return; }
