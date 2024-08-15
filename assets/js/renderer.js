@@ -936,6 +936,17 @@ var Presentations = function (_React$Component) {
 			saveSettings('viddetail', vd);
 		}
 	}, {
+		key: 'clearEEImage',
+		value: function clearEEImage(id) {
+			console.log('clear', id);
+			var vd = this.state.viddetail;
+			var x = vd[id];
+			delete x.eeimage;
+			vd[id] = x;
+			this.setState({ viddetail: vd });
+			saveSettings('viddetail', vd);
+		}
+	}, {
 		key: 'render',
 		value: function render() {
 			var _this2 = this;
@@ -1097,6 +1108,19 @@ var Presentations = function (_React$Component) {
 										return _this2.handleLostFocus(e);
 									} }),
 								React.createElement(
+									'span',
+									null,
+									'Entry/Exit Image/Video (Optional)'
+								),
+								React.createElement(FileSelect, { id: 'eeimage', onChange: function onChange(e) {
+										return _this2.updateSessionSettings(e, item['id']);
+									},
+									onBlur: function onBlur(e) {
+										return _this2.handleLostFocus(e);
+									},
+									value: _this2.state.viddetail[item['id']] ? _this2.state.viddetail[item['id']]['eeimage'] : []
+								}),
+								React.createElement(
 									'button',
 									{ onClick: function onClick(e) {
 											return _this2.clearItem(item['id']);
@@ -1116,6 +1140,13 @@ var Presentations = function (_React$Component) {
 											return _this2.clearItemUpload(item['id']);
 										} },
 									'Clear Upload'
+								),
+								React.createElement(
+									'button',
+									{ onClick: function onClick(e) {
+											return _this2.clearEEImage(item['id']);
+										} },
+									'Clear Entry/exit Image'
 								),
 								React.createElement(
 									'span',
@@ -1528,7 +1559,8 @@ var Process = function (_React$Component) {
 			var id = '';
 			this.endit = 0;
 			for (var key in this.state.viddetail) {
-				console.log(key, this.state.viddetail[key], !this.state.viddetail[key]['donefile'], this.state.viddetail[key]['doneedit'] === 'on', !this.doneitems[key]);
+				// console.log( key, this.state.viddetail[key], ! this.state.viddetail[key]['donefile'], this.state.viddetail[key]['doneedit'] === 'on', 
+				// 	!this.doneitems[key]);
 				if (this.state.viddetail[key] && !this.state.viddetail[key]['doneprocess'] && this.state.viddetail[key]['doneedit'] && !this.doneitems[key]) {
 					id = key;
 					break;
@@ -1555,33 +1587,59 @@ var Process = function (_React$Component) {
 				return;
 			}
 
-			if (!this.state.settings['fontfile']) {
+			var overideImage = null;
+			try {
+				overideImage = JSON.parse(this.state.viddetail[key]['eeimage']);
+				if (overideImage && Array.isArray(overideImage)) {
+					overideImage = overideImage[0];
+				}
+			} catch (e) {
+				overideImage = null;
+			}
+
+			console.log('details', details, this.state.settings, overideImage);
+			if (!this.state.settings['fontfile'] && !overideImage) {
 				alert('You must have a font set to process');return;
 			}
 			if (!this.state.settings.outdir) {
 				alert('You must have a outdir set to process');return;
 			}
-			if (!this.state.settings.imagefile) {
+			if (!this.state.settings.imagefile && !overideImage) {
 				alert('You must have a imagefile set to process');return;
 			}
-			//if( ! this.state.settings.credits ) { alert( 'You must have a credits set to process'); return; }
-			if (!this.state.settings.tmpdir) {
+			//if( ! this.state.settings.credits  && ! overideImage ) { alert( 'You must have a credits set to process'); return; }
+			if (!this.state.settings.tmpdir && !overideImage) {
 				alert('You must have a tmpdir set to process');return;
 			}
-			if (!this.state.settings['fontsize']) {
+			if (!this.state.settings['fontsize'] && !overideImage) {
 				alert('You must have a fontsize set to process');return;
 			}
-			if (!this.state.settings['text_y']) {
+			if (!this.state.settings['text_y'] && !overideImage) {
 				alert('You must have a text_y set to process');return;
 			}
-			if (!this.state.settings['fontcolor']) {
+			if (!this.state.settings['fontcolor'] && !overideImage) {
 				alert('You must have a fontcolor set to process');return;
+			}
+
+			var f = null;
+			var ff = null;
+			try {
+				f = JSON.parse(this.state.settings.imagefile);
+			} catch (e) {
+				f = null;
+			}
+
+			try {
+				ff = JSON.parse(this.state.settings['fontfile']);
+			} catch (e) {
+				ff = null;
 			}
 
 			this.p.startProcess({
 				'id': id,
 				'outputfile': JSON.parse(this.state.settings.outdir)[0] + '/' + details['outfile'] + '.mp4',
-				'imagefile': JSON.parse(this.state.settings.imagefile),
+				'imagefile': f,
+				'eeimage': overideImage,
 				'speaker': details['speaker'],
 				'title': details['viddetail'].title.rendered,
 				'description': details['viddetail'].content.rendered,
@@ -1591,7 +1649,7 @@ var Process = function (_React$Component) {
 				'tmpdir': JSON.parse(this.state.settings.tmpdir),
 				'start': this.state.viddetail[id]['video_start'],
 				'end': this.state.viddetail[id]['video_end'],
-				'fontfile': JSON.parse(this.state.settings['fontfile']),
+				'fontfile': ff,
 				'fontsize': this.state.settings['fontsize'],
 				'text_y': this.state.settings['text_y'],
 				'fontcolor': this.state.settings['fontcolor']

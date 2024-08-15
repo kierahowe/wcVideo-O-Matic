@@ -215,6 +215,16 @@ class Presentations extends React.Component {
 		saveSettings( 'viddetail', vd );
 	}
 
+	clearEEImage( id ) { 
+		console.log( 'clear', id );
+		let vd = this.state.viddetail;
+		let x = vd[id];
+		delete x.eeimage;
+		vd[id] = x;
+		this.setState( { viddetail: vd } );
+		saveSettings( 'viddetail', vd );
+	}
+
 	render() {
 		if( this.state.tracks ) {
 			var listTracks = this.state.tracks.map( item => {
@@ -311,9 +321,17 @@ class Presentations extends React.Component {
 									value={ this.state.viddetail[ item['id'] ] ? this.state.viddetail[ item['id'] ]['slides'] : '' } 
 									onChange={( e ) => this.updateSessionSettings( e, item['id'] ) } 
 									onBlur={(e) => this.handleLostFocus(e) } />
+
+								<span>Entry/Exit Image/Video (Optional)</span>
+								<FileSelect id="eeimage" onChange={( e ) => this.updateSessionSettings( e, item['id'] ) }
+								 	onBlur={(e) => this.handleLostFocus(e) }
+									value={ this.state.viddetail[ item['id'] ] ? this.state.viddetail[ item['id'] ]['eeimage'] : [] } 
+								/>		
+								
 								<button onClick={(e) => this.clearItem( item['id'] )}>Clear Processed Video</button>
 								<button onClick={(e) => this.clearItemProcessed( item['id'] )}>Clear Processed</button>
 								<button onClick={(e) => this.clearItemUpload( item['id'] )}>Clear Upload</button>
+								<button onClick={(e) => this.clearEEImage( item['id'] )}>Clear Entry/exit Image</button>
 								<span className="error">
 									{ this.state.viddetail[ item['id'] ] && this.state.viddetail[ item['id'] ]['failmessage'] ? 
 										this.state.viddetail[ item['id'] ]['failmessage'] : '' }

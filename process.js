@@ -13,7 +13,7 @@ exports.startProcess = ( args ) => {
 	
 	success = false;
 	percent = 0;
-	status = 'Starting video processingx';
+	status = 'Starting video processing';
 	complete = false;
 	curid = args['id'];
 	arg = args;
@@ -28,26 +28,70 @@ exports.startProcess = ( args ) => {
 	outfile = args['outputfile'];
 	console.log( 'x', args );
 
-	this.buildImageVideo( args['imagefile'][0], args['tmpdir'][0] + '/startfile.mp4', '', 
-						args['speaker'] + '\n' + args['title'], param, () => { 
+	if( args[ 'eeimage' ] ) {
 		percent ++;
-		if( typeof args['credits'] === 'undefined' || args['credits'] === '' ) { 
-			args['credits'] = args['speaker'] + '\n' + args['title'];
-		}
-		this.buildImageVideo( args['imagefile'][0], args['tmpdir'][0] + '/endfile.mp4', '', 
-						args['credits'], param, () => { 
+		var proc = ffmpeg( args[ 'eeimage' ] );
+			proc.videoBitrate('2048k')
+			.videoCodec('mpeg4')
+			.audioBitrate('128k')
+			.audioChannels(2)
+			//.format('avi')
+			.fps(25)
+			.size('1280x720');
+			
+		proc
+			.on('end', () => {
+				console.log('file have been transcoded succesfully');
+				  status = 'transcode completed succesfully';
+				  percent = 25;
+
+				  this.mergeVideos( args['outputfile'], 
+						[ arg['tmpdir'][0] + '/tmp_vid.mp4', args['mainvideo'], arg['tmpdir'][0] + '/tmp_vid.mp4' ], 
+						{ 'bounds': { [args['mainvideo']]: { 'start': args['start'], 'end': args['end'] } } },
+						() => { 
+							status = 'File processed: ';
+							percent = 100;
+							complete = true;
+							success = true;
+					});
+					
+			})
+			.on('error', function(err) {
+				  console.log('An error occured merging ' + err.message);
+				  status = 'An error occured merging ' + err.message;
+				  percent = 100;
+				  complete = true;
+			})
+			.on('progress', info => {
+				//viddetail[ outname ] = info;
+				console.log('progress ' + info.percent + '%');
+				percent = Math.round( info.percent / 4 );
+			  })
+			.save( arg['tmpdir'][0] + '/tmp_vid.mp4' );
+
+		
+	} else {
+		this.buildImageVideo( args['imagefile'][0], args['tmpdir'][0] + '/startfile.mp4', '', 
+							args['speaker'] + '\n' + args['title'], param, () => { 
 			percent ++;
-			this.mergeVideos( args['outputfile'], 
-				[ args['tmpdir'][0] + '/startfile.mp4', args['mainvideo'], args['tmpdir'][0] + '/endfile.mp4' ], 
-				{ 'bounds': { [args['mainvideo']]: { 'start': args['start'], 'end': args['end'] } } },
-				() => { 
-					status = 'File processed: ';
-					percent = 100;
-					complete = true;
-					success = true;
-			});
+			if( typeof args['credits'] === 'undefined' || args['credits'] === '' ) { 
+				args['credits'] = args['speaker'] + '\n' + args['title'];
+			}
+			this.buildImageVideo( args['imagefile'][0], args['tmpdir'][0] + '/endfile.mp4', '', 
+							args['credits'], param, () => { 
+				percent ++;
+				this.mergeVideos( args['outputfile'], 
+					[ args['tmpdir'][0] + '/startfile.mp4', args['mainvideo'], args['tmpdir'][0] + '/endfile.mp4' ], 
+					{ 'bounds': { [args['mainvideo']]: { 'start': args['start'], 'end': args['end'] } } },
+					() => { 
+						status = 'File processed: ';
+						percent = 100;
+						complete = true;
+						success = true;
+				});
+			} );
 		} );
-	} );
+	}
 }
 
 exports.getDetails = () => { 
@@ -212,8 +256,8 @@ exports.mergeVideos = ( outname, vidlist, param, callback ) => {
 		  	callback();
 		})
 		.on('error', function(err) {
-		  	console.log('An error occured merging ' + err.message);
-		  	status = 'An error occured merging ' + err.message;
+		  	console.log('An error occured merging: ' + err.message);
+		  	status = 'An error occured merging: ' + err.message;
 		  	percent = 100;
 		  	complete = true;
 		})
@@ -228,7 +272,7 @@ exports.mergeVideos = ( outname, vidlist, param, callback ) => {
     	.videoCodec('mpeg4')
 		.audioBitrate('128k')
 		.audioChannels(2)
-		.format('avi')
+		//.format('avi')
 		.fps(25);
 		console.log( 'filter', filter );
 		if( filter !== '' ) {

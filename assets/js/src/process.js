@@ -106,8 +106,8 @@ class Process extends React.Component {
 		var id = '';
 		this.endit = 0;
 		for( var key in this.state.viddetail ) { 
-			console.log( key, this.state.viddetail[key], ! this.state.viddetail[key]['donefile'], this.state.viddetail[key]['doneedit'] === 'on', 
-				!this.doneitems[key]);
+			// console.log( key, this.state.viddetail[key], ! this.state.viddetail[key]['donefile'], this.state.viddetail[key]['doneedit'] === 'on', 
+			// 	!this.doneitems[key]);
 			if ( this.state.viddetail[key] && ! this.state.viddetail[key]['doneprocess'] &&
 				this.state.viddetail[key]['doneedit'] && !this.doneitems[key] ) { 
 				id = key; 
@@ -135,19 +135,46 @@ class Process extends React.Component {
 			return;
 		}
 
-		if( ! this.state.settings['fontfile'] ) { alert( 'You must have a font set to process' ); return; }
+		let overideImage = null;
+		try {
+			overideImage = JSON.parse( this.state.viddetail[key][ 'eeimage' ] );
+			if( overideImage && Array.isArray( overideImage ) ) {
+				overideImage = overideImage[0];
+			}
+		} catch( e ) {
+			overideImage = null;
+		}
+
+		console.log( 'details', details, this.state.settings, overideImage );
+		if( ! this.state.settings['fontfile']  && ! overideImage ) { alert( 'You must have a font set to process' ); return; }
 		if( ! this.state.settings.outdir ) { alert( 'You must have a outdir set to process'); return; }
-		if( ! this.state.settings.imagefile ) { alert( 'You must have a imagefile set to process'); return; }
-		//if( ! this.state.settings.credits ) { alert( 'You must have a credits set to process'); return; }
-		if( ! this.state.settings.tmpdir ) { alert( 'You must have a tmpdir set to process'); return; }
-		if( ! this.state.settings['fontsize'] ) { alert( 'You must have a fontsize set to process'); return; }
-		if( ! this.state.settings['text_y'] ) { alert( 'You must have a text_y set to process'); return; }
-		if( ! this.state.settings['fontcolor'] ) { alert( 'You must have a fontcolor set to process'); return; }
+		if( ! this.state.settings.imagefile  && ! overideImage ) { alert( 'You must have a imagefile set to process'); return; }
+		//if( ! this.state.settings.credits  && ! overideImage ) { alert( 'You must have a credits set to process'); return; }
+		if( ! this.state.settings.tmpdir  && ! overideImage ) { alert( 'You must have a tmpdir set to process'); return; }
+		if( ! this.state.settings['fontsize']  && ! overideImage ) { alert( 'You must have a fontsize set to process'); return; }
+		if( ! this.state.settings['text_y']  && ! overideImage ) { alert( 'You must have a text_y set to process'); return; }
+		if( ! this.state.settings['fontcolor']  && ! overideImage ) { alert( 'You must have a fontcolor set to process'); return; }
+
+		let f = null;
+		let ff = null;
+		try {
+			f = JSON.parse( this.state.settings.imagefile );
+		} catch( e ) {
+			f = null;
+		}
+
+		try {
+			ff = JSON.parse( this.state.settings['fontfile'] );
+		} catch( e ) {
+			ff = null;
+		}
+		
 
 		this.p.startProcess( { 
 			'id': id, 
 			'outputfile':  JSON.parse( this.state.settings.outdir )[0] + '/' + details['outfile'] + '.mp4', 
-			'imagefile': JSON.parse( this.state.settings.imagefile ),
+			'imagefile': f,
+			'eeimage': overideImage,
 			'speaker': details['speaker'], 
 			'title': details['viddetail'].title.rendered,
 			'description': details['viddetail'].content.rendered,
@@ -157,7 +184,7 @@ class Process extends React.Component {
 			'tmpdir': JSON.parse( this.state.settings.tmpdir ),
 			'start': this.state.viddetail[id]['video_start'],
 			'end': this.state.viddetail[id]['video_end'],
-			'fontfile': JSON.parse( this.state.settings['fontfile'] ), 
+			'fontfile': ff, 
 			'fontsize': this.state.settings['fontsize'], 
 			'text_y': this.state.settings['text_y'], 
 			'fontcolor': this.state.settings['fontcolor'], 
