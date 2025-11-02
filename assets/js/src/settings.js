@@ -196,6 +196,14 @@ class SettingsInput extends React.Component {
 									onChange={( e ) => this.handleChange( e )}/>
 							</td>
 						</tr>
+						<tr>
+							<td>Text split at</td>
+							<td>
+								<input type="number" id="text_split" value={this.state.settings.text_split} 
+									onBlur={(e) => this.handleLostFocus(e) } 
+									onChange={( e ) => this.handleChange( e )}/>
+							</td>
+						</tr>
 
 					</tbody>
 				</table>

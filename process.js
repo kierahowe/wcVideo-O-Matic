@@ -9,6 +9,7 @@ var arg = null;
 var outfile = null;
 
 exports.startProcess = ( args ) => { 
+	console.log( 'startProcess' );
 	//console.log( args );
 	
 	success = false;
@@ -22,7 +23,8 @@ exports.startProcess = ( args ) => {
 		'fontfile': arg['fontfile'] ? arg['fontfile'][0] : 'assets/media/Baskerville.ttc', 
 		'fontsize': arg['fontsize'] ? arg['fontsize'] : 40, 
 		'text_y': arg['text_y'] ? arg['text_y'] : 40, 
-		'fontcolor': arg['fontcolor'] ? arg['fontcolor'].substring( 1 ) : '000000', 
+		'fontcolor': arg['fontcolor'] ? arg['fontcolor'].substring( 1 ) : '000000',
+		'text_split': arg['text_split'] ? arg['text_split'] : '',
 	};
 
 	outfile = args['outputfile'];
@@ -38,7 +40,7 @@ exports.startProcess = ( args ) => {
 			//.format('avi')
 			.fps(25)
 			.size('1280x720');
-			
+		
 		proc
 			.on('end', () => {
 				console.log('file have been transcoded succesfully');
@@ -95,10 +97,12 @@ exports.startProcess = ( args ) => {
 }
 
 exports.getDetails = () => { 
+	console.log( 'getDetails' );
 	return { 'percent': percent, 'status': status, 'complete': complete, 'success': success, 'curid': curid, 'outfile':outfile };
 }
 
 exports.buildImageVideo = ( img, outfile, audiofile, text, params, callback ) => { 
+	console.log( 'buildImageVideo' );
 	status = 'Start building video from image';
 	if( audiofile === '' ) { 
 		audiofile = 'assets/media/empty-audio.mp3';
@@ -113,7 +117,7 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, params, callback ) =>
     	.videoCodec('mpeg4')
 		.audioBitrate('128k')
 		.audioChannels(2)
-		.format('avi')
+		//.format('avi')
 		.size('?x720')
 		.fps(25)
 		.on('end', () => {
@@ -135,6 +139,34 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, params, callback ) =>
 	    	percent = Math.round( info.percent / 50 );
 	  	});
 
+	console.log( 'xxxxtxt', text, params );
+	text = text
+		.replace( /\&amp/g, '&')
+		.replace( /\;/g, '')
+		.replace( /\:/g, '\\:')
+		.replace( /\'/g, "\\’")
+		.replace( /’/g, '\\’')
+		.replace( /"/g, '\\’')
+		.replace( /,/g, '\\,');
+		
+	
+	if( params[ 'text_split' ] ) {
+		let pos = parseInt( params[ 'text_split' ] );
+		let txtctr = 0;
+		for( let j = 0; j < text.length; j++ ) { 
+			if( txtctr > pos && text.charAt( j ) === ' ' ) {
+				text = text.substring( 0, j ) + '\n' + text.substring( j + 1 );
+				txtctr = 0;
+			}
+			if( text.charAt( j ) === '\n' ) {
+				txtctr = 0;
+			}
+			txtctr ++;
+		}
+	}
+
+	console.log( '-->', text );
+
 	var textsplit = text.split('\n');
 	var th = '';
 	if( textsplit.length % 2 === 1 ) { 
@@ -144,11 +176,14 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, params, callback ) =>
 		th = th + '-( text_h * 1.2) *' + Math.floor(textsplit.length / 2);
 	}
 	for( var i = 0; i < textsplit.length; i++ ) {
+		var txt = textsplit[i];
+		console.log( '----->', txt );
+
 		proc.videoFilters({
 		  filter: 'drawtext',
 		  options: {
 		  	fontfile: params['fontfile'],
-		    text: textsplit[i].replace('&amp', '&').replace(';', ''),
+		    text: "'" + txt + "'",
 		    fontsize: params['fontsize'],
 		    fontcolor: params['fontcolor'],
 		    x: '(main_w/2-text_w/2)',
@@ -167,6 +202,7 @@ exports.buildImageVideo = ( img, outfile, audiofile, text, params, callback ) =>
 }
 
 exports.transcode = ( inname, outname, ratio, callback ) => { 
+	console.log( 'transcode' );
   	status = 'transcode pass started';
  //  	if( outname === 'transcode_midfile.mp4' ) { 
  //  		viddetail[ outname ] = { frames: 63327 }
@@ -179,10 +215,10 @@ exports.transcode = ( inname, outname, ratio, callback ) => {
     	.videoCodec('mpeg4')
 		.audioBitrate('128k')
 		.audioChannels(2)
-		//.format('avi')
+		.format('avi')
 		.fps(25)
 		.size('1280x720');
-
+		
 		if( ratio !== '' ) { 
 			proc
 				.aspect( ratio )
@@ -215,9 +251,10 @@ exports.transcode = ( inname, outname, ratio, callback ) => {
 }
 
 exports.mergeVideos = ( outname, vidlist, param, callback ) => { 
+	console.log( 'mergeVideos' );
 	status = 'Start merging videos';
 	const fs = require("fs"); 
-
+	console.log( 'STarting merge' );
 	var flg = 0;	
 	try{ 
 		var proc = ffmpeg( vidlist[0] );
@@ -255,12 +292,12 @@ exports.mergeVideos = ( outname, vidlist, param, callback ) => {
 		  	success = true;
 		  	callback();
 		})
-		.on('error', function(err) {
+		.on( 'error', function(err) {
 		  	console.log('An error occured merging: ' + err.message);
 		  	status = 'An error occured merging: ' + err.message;
 		  	percent = 100;
 		  	complete = true;
-		})
+		} )
 		.on('progress', function(info) {
 	    	console.log('progress ' + (info.percent * firstSize / fsz) + '%');
 	    	percent = Math.round( info.percent * firstSize / fsz );
@@ -274,6 +311,7 @@ exports.mergeVideos = ( outname, vidlist, param, callback ) => {
 		.audioChannels(2)
 		//.format('avi')
 		.fps(25);
+		
 		console.log( 'filter', filter );
 		if( filter !== '' ) {
 			proc.addOption('-filter_complex', filter + ';' + cat + 'concat=n=' + vidlist.length + ':v=1:a=1');

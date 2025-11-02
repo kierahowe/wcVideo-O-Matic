@@ -33,7 +33,7 @@ exports.transcode = ( inname, outname, id ) => {
 
   	starttime = (new Date()).getTime();
 	try{ 
-		var proc = ffmpeg( files[0] );
+		var proc = ffmpeg( files[ 0 ] )
 		let fsz = fs.statSync( files[0] ).size;
 		const firstSize = fsz;
 		
@@ -45,7 +45,8 @@ exports.transcode = ( inname, outname, id ) => {
 			proc.input( files[i] );
 			fsz += fs.statSync( files[i] ).size;
 			filter += ',[' + i + ':0] scale=1280:720 [v' + i + ']';
-			cat += '[v' + i + '][' + i + ':1]';
+			filter += ',[' + i + ':1] highpass=f=300,lowpass=f=1000 [a' + i + ']';
+			cat += '[v' + i + '][a' + i + ']';
 		}
 
 		proc.videoBitrate('2048k')

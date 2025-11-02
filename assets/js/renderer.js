@@ -662,6 +662,26 @@ var SettingsInput = function (_React$Component) {
 										return _this3.handleChange(e);
 									} })
 							)
+						),
+						React.createElement(
+							'tr',
+							null,
+							React.createElement(
+								'td',
+								null,
+								'Text split at'
+							),
+							React.createElement(
+								'td',
+								null,
+								React.createElement('input', { type: 'number', id: 'text_split', value: this.state.settings.text_split,
+									onBlur: function onBlur(e) {
+										return _this3.handleLostFocus(e);
+									},
+									onChange: function onChange(e) {
+										return _this3.handleChange(e);
+									} })
+							)
 						)
 					)
 				)
@@ -1652,7 +1672,8 @@ var Process = function (_React$Component) {
 				'fontfile': ff,
 				'fontsize': this.state.settings['fontsize'],
 				'text_y': this.state.settings['text_y'],
-				'fontcolor': this.state.settings['fontcolor']
+				'fontcolor': this.state.settings['fontcolor'],
+				'text_split': this.state.settings['text_split']
 			});
 		}
 	}, {

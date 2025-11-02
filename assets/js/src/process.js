@@ -188,6 +188,7 @@ class Process extends React.Component {
 			'fontsize': this.state.settings['fontsize'], 
 			'text_y': this.state.settings['text_y'], 
 			'fontcolor': this.state.settings['fontcolor'], 
+			'text_split': this.state.settings['text_split'],
 		});
 	}
 

@@ -1,5 +1,7 @@
 
 global.CURRENTVERSION = '0.1.0';
+const https = require('https');
+//const { cheerio } = require('cheerio');
 
 var app = require('electron').app; // Module to control application life.
 var BrowserWindow = require('electron').BrowserWindow;  // Module to create native browser window.
@@ -9,12 +11,29 @@ app.on('ready', function() {
 	openNewWindow ('index.html', { devTools: true });   //devTools: true 
 } );
 
+//getCurrentForm();
+
+function getCurrentForm() {
+	https.get('https://wordpress.tv/submit-video/', ( resp ) => {
+		let data = '';
+		resp.on('data', (chunk) => {
+			data += chunk;
+		} );
+
+		resp.on('end', () => {
+			// const $ = cheerio.load( data );
+
+			// var form = $( 'form' );
+			console.log( data );
+		} );
+	} );
+}
 
 function openNewWindow (url, position, data) { 
 	// Loads new window
 	// 
 
-	console.log ("new window load:", position);
+	console.log ("new window loadx:", position);
 
 	if (typeof position === 'undefined') { 
 		data = url[2];
